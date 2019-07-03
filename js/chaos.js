@@ -139,7 +139,7 @@ function applyChaos() {
 
             vertexArray[nextIndex] = worldPos.x;
             vertexArray[nextIndex + 1] = worldPos.y;
-            vertexArray[nextIndex + 2] = worldPos.z;
+            //vertexArray[nextIndex + 2] = worldPos.z;
             nextIndex += 3;
 
             //Check if dynamic delta should be adjusted
@@ -166,6 +166,42 @@ function applyChaos() {
 
 }
 
+function initComputeRenderer() {
+    gpuCompute = new GPUComputationRenderer(stepsPerFrame, iters, renderer);
+    var texture = gpuCompute.createTexture();
+    fillTexture(texture);
+    positionVariable = gpuCompute.addVariable("texture", document.getElementById('fragmentShader').textContent, texture);
+    //gpuCompute.setVariableDependencies(positionVariable, [positionVariable, velocityVariable]);
+    positionUniforms = positionVariable.material.uniforms;
+
+    positionUniforms["t"] = {value: t};
+    positionUniforms["params0"] = {value: new THREE.Vector4(params[0], params[1], params[2], params[3])};
+
+    positionVariable.wrapS = THREE.RepeatWrapping;
+    positionVariable.wrapT = THREE.RepeatWrapping;
+
+    var error = gpuCompute.init();
+    if (error !== null) {
+        console.error(error);
+    }
+}
+
+/**
+ * Fills a texture of size iters*steps to send to the compute shader
+ *
+ * @param texture
+ */
+function fillTexture(texture) {
+    var theArray = texture.image.data;
+    for (var k = 0, kl = theArray.length; k < kl; k += 4) {
+        // RGBA
+        theArray[k] = 1;
+        theArray[k + 1] = 1;
+        theArray[k + 2] = 1;
+        theArray[k + 3] = 1;
+    }
+}
+
 // If point is in ortho viewport
 function pointIsInViewport(x, y) {
     var sx = screenWorldUnits.x / 2.0;
@@ -186,6 +222,7 @@ function init() {
 
     randParams();
 
+
     camera = new THREE.OrthographicCamera(screenWorldUnits.x / -2, screenWorldUnits.x / 2, screenWorldUnits.y / 2, screenWorldUnits.y / -2, 1, 1000);
     camera.position.z = 10;
     scene = new THREE.Scene();
@@ -194,9 +231,12 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
+    initComputeRenderer();
+
     var starsMaterial = new THREE.PointsMaterial({size: 0.2, color: 0xff8888});
     points = new THREE.Points(bufferGeometry, starsMaterial);
     scene.add(points);
+
 
     document.addEventListener('mousemove', onDocumentMouseMove, false);
     document.addEventListener('touchstart', onDocumentTouchStart, false);
@@ -238,6 +278,11 @@ function onDocumentTouchMove(event) {
 //
 function animate() {
     stats.begin();
+    positionUniforms["t"].value = t;
+    gpuCompute.compute();
+    // Get transformed texture
+    //gpuCompute.getCurrentRenderTarget(positionVariable).texture;
+
     applyChaos();
     points.geometry.attributes.position.needsUpdate = true;
     points.geometry.computeBoundingSphere();
