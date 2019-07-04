@@ -128,6 +128,7 @@ function applyChaos() {
 
             worldPos = toWorldCoods(nx, ny);
 
+            // TODO error
             x = worldPos.x;
             y = worldPos.y;
 
@@ -166,41 +167,6 @@ function applyChaos() {
 
 }
 
-function initComputeRenderer() {
-    gpuCompute = new GPUComputationRenderer(stepsPerFrame, iters, renderer);
-    var texture = gpuCompute.createTexture();
-    fillTexture(texture);
-    positionVariable = gpuCompute.addVariable("texture", document.getElementById('fragmentShader').textContent, texture);
-    //gpuCompute.setVariableDependencies(positionVariable, [positionVariable, velocityVariable]);
-    positionUniforms = positionVariable.material.uniforms;
-
-    positionUniforms["t"] = {value: t};
-    positionUniforms["params0"] = {value: new THREE.Vector4(params[0], params[1], params[2], params[3])};
-
-    positionVariable.wrapS = THREE.RepeatWrapping;
-    positionVariable.wrapT = THREE.RepeatWrapping;
-
-    var error = gpuCompute.init();
-    if (error !== null) {
-        console.error(error);
-    }
-}
-
-/**
- * Fills a texture of size iters*steps to send to the compute shader
- *
- * @param texture
- */
-function fillTexture(texture) {
-    var theArray = texture.image.data;
-    for (var k = 0, kl = theArray.length; k < kl; k += 4) {
-        // RGBA
-        theArray[k] = 1;
-        theArray[k + 1] = 1;
-        theArray[k + 2] = 1;
-        theArray[k + 3] = 1;
-    }
-}
 
 // If point is in ortho viewport
 function pointIsInViewport(x, y) {
@@ -213,36 +179,110 @@ var mouseX = 0, mouseY = 0;
 var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
 var camera, scene, renderer;
+var bufferCamera, bufferScene, bufferTextureA, bufferTextureB;
+var useBufferTextureA = true;
 init();
 animate();
 
 var points;
 
+var debugBoxMaterial;
+
+var uniforms;
+
 function init() {
 
     randParams();
 
+    bufferCamera = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 1, 1000);
+    bufferCamera.position.z = 10;
 
     camera = new THREE.OrthographicCamera(screenWorldUnits.x / -2, screenWorldUnits.x / 2, screenWorldUnits.y / 2, screenWorldUnits.y / -2, 1, 1000);
     camera.position.z = 10;
+
     scene = new THREE.Scene();
+    bufferScene = new THREE.Scene();
+
     renderer = new THREE.WebGLRenderer({antialias: true});
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
+
+    bufferTextureA = new THREE.WebGLRenderTarget(512, 512, {
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.NearestFilter
+    });
+    bufferTextureB = new THREE.WebGLRenderTarget(512, 512, {
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.NearestFilter
+    });
+    // TODO texRenderer
+
     document.body.appendChild(renderer.domElement);
 
-    initComputeRenderer();
+    debugBoxMaterial = new THREE.MeshBasicMaterial({map: bufferTextureA.texture});
+    //debugBoxMaterial = new THREE.MeshBasicMaterial({color: 0xff0000});
+    var debugBoxGeometry = new THREE.BoxGeometry(1, 1, 1);
+    var debugBoxObject = new THREE.Mesh(debugBoxGeometry, debugBoxMaterial);
+    scene.add(debugBoxObject);
 
-    var starsMaterial = new THREE.PointsMaterial({size: 0.2, color: 0xff8888});
+    var matrixParamsX = new THREE.Matrix3();
+    var matrixParamsY = new THREE.Matrix3();
+
+    matrixParamsX.set(
+        params[0], params[1], params[2],
+        params[3], params[4], params[5],
+        params[6], params[7], params[8]
+    );
+
+    matrixParamsY.set(
+        params[9], params[10], params[11],
+        params[12], params[13], params[14],
+        params[15], params[16], params[17]
+    );
+
+    uniforms = {
+        resolution: {value: new THREE.Vector2(512, 512)},
+        texData: {type: "t", value: null},
+        time: {value: t},
+        paramsX: {value: matrixParamsX},
+        paramsY: {value: matrixParamsY}
+    };
+
+    let computeShaderMaterial = new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        fragmentShader: document.getElementById('fragmentComputeShader').textContent,
+        vertexShader: document.getElementById('vertexComputeShader').textContent,
+    });
+
+    var bufferBoxGeometry = new THREE.BoxGeometry(1, 1, 1);
+    var bufferBoxObject = new THREE.Mesh(bufferBoxGeometry, computeShaderMaterial);
+    bufferScene.add(bufferBoxObject);
+
+    var starsMaterial = new THREE.PointsMaterial({size: 1, color: 0xff8888});
     points = new THREE.Points(bufferGeometry, starsMaterial);
     scene.add(points);
-
 
     document.addEventListener('mousemove', onDocumentMouseMove, false);
     document.addEventListener('touchstart', onDocumentTouchStart, false);
     document.addEventListener('touchmove', onDocumentTouchMove, false);
     //
     window.addEventListener('resize', onWindowResize, false);
+}
+
+/**
+ * Fills a texture of size iters*steps to send to the compute shader
+ *
+ * @param texture
+ */
+function fillTexture(texture) {
+    var theArray = texture.image.data;
+    for (var k = 0, kl = theArray.length; k < kl; k += 4) {
+        // RGBA
+        theArray[k] = 0;
+        theArray[k + 1] = 0;
+        theArray[k + 2] = 1;
+        theArray[k + 3] = 1;
+    }
 }
 
 function onWindowResize() {
@@ -278,42 +318,23 @@ function onDocumentTouchMove(event) {
 //
 function animate() {
     stats.begin();
-    positionUniforms["t"].value = t;
-    gpuCompute.compute();
-    // Get transformed texture
-    //gpuCompute.getCurrentRenderTarget(positionVariable).texture;
 
     applyChaos();
     points.geometry.attributes.position.needsUpdate = true;
     points.geometry.computeBoundingSphere();
-    //console.log(bufferGeometry.attributes.position.array);
-    //console.log(vertexArray[0]);
-    render();
+
+    uniforms.time.value = t;
+
+    var bufferTextureFromRender = useBufferTextureA ? bufferTextureA : bufferTextureB;
+    renderer.setRenderTarget(bufferTextureFromRender);
+    renderer.render(bufferScene, bufferCamera);
+
+    var bufferTextureToShader = useBufferTextureA ? bufferTextureB : bufferTextureA;
+    uniforms.texData.value = bufferTextureToShader.texture;
+
+    renderer.setRenderTarget(null);
+    renderer.render(scene, camera);
     stats.end();
 
     requestAnimationFrame(animate);
-}
-
-function render() {
-
-    //Draw new points
-    //static const float dot_sizes[] = { 1.0f, 3.0f, 10.0f };
-    //glEnable(GL_POINT_SMOOTH);
-    //glPointSize(dot_sizes[dot_type]);
-    //window.draw(vertex_array.data(), vertex_array.size(), sf::PrimitiveType::Points);
-    renderer.render(scene, camera);
-}
-
-function renderbk() {
-    camera.position.x += (mouseX - camera.position.x) * 0.05;
-    camera.position.y += (-mouseY + 200 - camera.position.y) * 0.05;
-    camera.lookAt(scene.position);
-    var time = Date.now() * 0.0005;
-    for (var i = 0; i < scene.children.length; i++) {
-        var object = scene.children[i];
-        if (object.isLine) {
-            object.rotation.y = time * (i % 2 ? 1 : -1);
-        }
-    }
-    renderer.render(scene, camera);
 }

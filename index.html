@@ -6,33 +6,75 @@
 </head>
 <body>
 
-<script id="vertexShader" type="x-shader/x-vertex">
-    //uniform sampler2D texture;
+<script id="fragmentComputeShader" type="x-shader/x-fragment">
+    // x = iter, y = step
+    // x = r & g, y = b & a
+    uniform vec2 resolution;
+    uniform sampler2D texData;
+    uniform mat3 paramsX;
+    uniform mat3 paramsY;
+    uniform float time;
+    varying vec3 vUv;
 
-    uniform mat4 projection;
-    uniform mat4 view;
-    uniform mat4 model;
+    void main() {
+        vec2 uv = gl_FragCoord.xy / resolution.xy;
+        vec4 data = texture2D(texData, uv);
 
-    void main()
-    {
-        gl_Position = projection * view * model * vert;
+        float t = 0.0;
+        float x = 0.0;
+        float y = 0.0;
+
+        if (abs(gl_FragCoord.x) < 0.001 && abs(gl_FragCoord.y) < 0.001){ // If first pixel
+            t = time;
+        } else {
+            vec4 lastData = texture2D(texData, vec2(gl_FragCoord.x - 1.0, gl_FragCoord.y - 1.0) / resolution.xy);
+            if (abs(gl_FragCoord.x) < 0.001){ // If started new step
+                t = lastData.z;
+                t += 0.01;
+                x = t;
+                y = t;
+            } else { // Normal
+                x = lastData.x;
+                y = lastData.y;
+                t = lastData.z;
+            }
+        }
+
+        float xx = x * x;
+        float yy = y * y;
+        float tt = t * t;
+        float xy = x * y;
+        float xt = x * t;
+        float yt = y * t;
+        float nx = xx * paramsX[0][0] + yy * paramsX[1][0] + tt * paramsX[2][0] + xy * paramsX[0][1] + xt * paramsX[1][1] + yt * paramsX[2][1] + x * paramsX[0][2] + y * paramsX[1][2] + t * paramsX[2][2];
+        float ny = xx * paramsY[0][0] + yy * paramsY[1][0] + tt * paramsY[2][0] + xy * paramsY[0][1] + xt * paramsY[1][1] + yt * paramsY[2][1] + x * paramsY[0][2] + y * paramsY[1][2] + t * paramsY[2][2];
+
+        //worldPos = toWorldCoods(nx, ny);
+
+        gl_FragColor = vec4(nx, ny, t, 1);
+
+    }
+</script>
+
+<script id="vertexComputeShader" type="x-shader/x-vertex">
+    varying vec3 vUv;
+
+    void main() {
+        vUv = position;
+        gl_PointSize = 2.0;
+        vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * modelViewPosition;
     }
 
 </script>
 
 <script id="fragmentShader" type="x-shader/x-fragment">
-    /*uniform float time;
+    uniform vec3 colorA;
     uniform vec4 params0;
+    varying vec3 vUv;
 
-    void main()    {
-        vec2 uv = gl_FragCoord.xy / resolution.xy;
-        vec4 tex = texture2D(texture, uv);
-        gl_FragColor = tex;
-    }*/
-
-    void main()
-    {
-        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    void main() {
+        gl_FragColor = vec4(colorA, 1.0);
     }
 </script>
 
