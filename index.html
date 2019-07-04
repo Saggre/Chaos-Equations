@@ -39,10 +39,10 @@
 
         // TODO variable timestep
 
-        float t = startTime + 0.00001 * gl_FragCoord.x;
+        float t = startTime + 0.00001 * float(int(gl_FragCoord.y));
 
-        float x = t * gl_FragCoord.y;
-        float y = t * gl_FragCoord.y;
+        float x = t;
+        float y = t;
 
         for (int iter = 0; iter < 256; iter++) {
             if (iter > int(gl_FragCoord.x)){
@@ -88,8 +88,7 @@
     }
 
     void main() {
-        //int dataX = mod(gl_VertexID, 256);
-        vec4 data = texture2D(dataTexture, vec2(int(position.x * 256.0), int(position.y * 256.0)));
+        vec4 data = texture2D(dataTexture, vec2(position.x, position.y));
 
         float x = decodeFloatVec2(vec2(data.x, data.y));
         float y = decodeFloatVec2(vec2(data.z, data.w));
@@ -103,7 +102,7 @@
         y -= 5.;
 
         vUv = position;
-        gl_PointSize = 3.0;
+        gl_PointSize = 1.0;
         vec4 modelViewPosition = modelViewMatrix * vec4(x, y, 1., 1.);
         vec4 pos = projectionMatrix * modelViewPosition;
         gl_Position = pos;

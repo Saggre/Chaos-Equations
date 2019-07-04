@@ -191,12 +191,29 @@ function applyChaos() {
 
 function applyComputeChaos() {
 
-    if (t > tEnd) {
+    if (time > tEnd) {
         randParams();
-        t = tStart;
+        time = tStart;
     }
 
+    var matrixParamsX = new THREE.Matrix3();
+    var matrixParamsY = new THREE.Matrix3();
+
+    matrixParamsX.set(
+        params[0], params[1], params[2],
+        params[3], params[4], params[5],
+        params[6], params[7], params[8]
+    );
+
+    matrixParamsY.set(
+        params[9], params[10], params[11],
+        params[12], params[13], params[14],
+        params[15], params[16], params[17]
+    );
+
     uniforms.startTime.value = time;
+    uniforms.paramsX.value = matrixParamsX;
+    uniforms.paramsY.value = matrixParamsY;
 
     renderer.setRenderTarget(bts ? bufferTextureA : bufferTextureB);
     renderer.render(bufferScene, bufferCamera);
@@ -380,7 +397,7 @@ function dot(a, b) {
 function animate() {
     stats.begin();
 
-    applyChaos();
+    //applyChaos();
     points.geometry.attributes.position.needsUpdate = true;
     points.geometry.computeBoundingSphere();
 
