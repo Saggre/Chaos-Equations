@@ -8,6 +8,8 @@
 <script id="fragmentComputeShader" type="x-shader/x-fragment">
     // x = iter, y = step
     // x = r & g, y = b & a
+    uniform int stepsPerFrame;
+    uniform int iters;
     uniform vec2 resolution;
     uniform sampler2D texData;
     uniform mat3 paramsX;
@@ -39,24 +41,36 @@
         vec2 uv = gl_FragCoord.xy / resolution.xy;
         vec4 data = texture2D(texData, uv);
 
+        // TODO variable timestep
+
         float t = startTime + 0.01 * gl_FragCoord.x;
-        float x = t;
-        float y = t;
 
-        float xx = x * x;
-        float yy = y * y;
-        float tt = t * t;
-        float xy = x * y;
-        float xt = x * t;
-        float yt = y * t;
-        float nx = xx * paramsX[0][0] + yy * paramsX[1][0] + tt * paramsX[2][0] + xy * paramsX[0][1] + xt * paramsX[1][1] + yt * paramsX[2][1] + x * paramsX[0][2] + y * paramsX[1][2] + t * paramsX[2][2];
-        float ny = xx * paramsY[0][0] + yy * paramsY[1][0] + tt * paramsY[2][0] + xy * paramsY[0][1] + xt * paramsY[1][1] + yt * paramsY[2][1] + x * paramsY[0][2] + y * paramsY[1][2] + t * paramsY[2][2];
+        float x = t * gl_FragCoord.y;
+        float y = t * gl_FragCoord.y;
 
-        gl_FragColor = vec4(encodeFloatVec2(nx), vec2(1., 1.));
+        for (int iter = 0; iter < 256; iter++) {
+            if (iter > int(gl_FragCoord.x)){
+                break;
+            }
+
+            float xx = x * x;
+            float yy = y * y;
+            float tt = t * t;
+            float xy = x * y;
+            float xt = x * t;
+            float yt = y * t;
+            float nx = xx * paramsX[0][0] + yy * paramsX[1][0] + tt * paramsX[2][0] + xy * paramsX[0][1] + xt * paramsX[1][1] + yt * paramsX[2][1] + x * paramsX[0][2] + y * paramsX[1][2] + t * paramsX[2][2];
+            float ny = xx * paramsY[0][0] + yy * paramsY[1][0] + tt * paramsY[2][0] + xy * paramsY[0][1] + xt * paramsY[1][1] + yt * paramsY[2][1] + x * paramsY[0][2] + y * paramsY[1][2] + t * paramsY[2][2];
+
+            x = nx;
+            y = ny;
+        }
+
+        gl_FragColor = vec4(encodeFloatVec2(x), encodeFloatVec2(y));
     }
 </script>
 
-<script id="vertexComputeShader" type="x-shader/x-vertex">
+<script id="vertexShader" type="x-shader/x-vertex">
     varying vec3 vUv;
 
     void main() {

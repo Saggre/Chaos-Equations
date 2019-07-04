@@ -50,6 +50,10 @@ var vertexArray = new Float32Array(stepsPerFrame * iters * 3);
 var bufferGeometry = new THREE.BufferGeometry();
 bufferGeometry.addAttribute('position', new THREE.BufferAttribute(vertexArray, 3));
 
+var computeVertexArray = new Float32Array(stepsPerFrame * iters * 3);
+var computeBufferGeometry = new THREE.BufferGeometry();
+computeBufferGeometry.addAttribute('position', new THREE.BufferAttribute(computeVertexArray, 3));
+
 // TODO random colors
 
 // Random color
@@ -168,75 +172,75 @@ function applyChaos() {
 }
 
 var bitDec = [1.0, 1 / 255.0];
+
 function applyComputeChaos() {
 
-    //Automatic restart
-    if (t > tEnd) {
-        randParams();
-        t = tStart;
-    }
-
-    renderer.setRenderTarget(bufferTexture);
-    var imageBuffer = new Uint8Array(stepsPerFrame * 1 * 4);
+    //var imageBuffer = new Uint8Array(stepsPerFrame * 1 * 4);
 
     //Smooth out the stepping speed.
-    var delta = deltaPerStep * speedMult;
-    rollingDelta = rollingDelta * 0.99 + delta * 0.01;
+    //var delta = deltaPerStep * speedMult;
+    //rollingDelta = rollingDelta * 0.99 + delta * 0.01;
 
-    var nextIndex = 0;
+    //var nextIndex = 0;
 
     /*for (var step = 0; step < stepsPerFrame; step++) {
         var isOffScreen = true;
         var x = t;
         var y = t;*/
 
-    for (var iter = 0; iter < iters; iter++) {
+    var bufferTexture = !bts ? bufferTextureA : bufferTextureB;
+    renderer.setRenderTarget(bufferTexture);
+    renderer.render(bufferScene, bufferCamera);
 
-        renderer.render(bufferScene, bufferCamera);
+    //renderer.readRenderTargetPixels(bufferTexture, 0, 0, stepsPerFrame, 1, imageBuffer);
+    //console.log(imageBuffer);
 
-        //renderer.readRenderTargetPixels(bufferTexture, 0, 0, stepsPerFrame, 1, imageBuffer);
-        //console.log(imageBuffer);
+    // Get image data here and reconstruct
+    //console.log(imageBuffer[0] + " | " + imageBuffer[1] + " | " + imageBuffer[2] + " | " + imageBuffer[3]);
 
-        // Get image data here and reconstruct
-        //console.log(imageBuffer[0] + " | " + imageBuffer[1] + " | " + imageBuffer[2] + " | " + imageBuffer[3]);
-
-        /*var bitDec = [1.0, 1 / 255.0, 1 / 65025.0, 1 / 16581375.0];
-        var v = [imageBuffer[0] / 255.0, imageBuffer[1] / 255.0, imageBuffer[2] / 255.0, imageBuffer[3] / 255.0];
-        console.log(dot(v, bitDec));*/
+    /*var bitDec = [1.0, 1 / 255.0, 1 / 65025.0, 1 / 16581375.0];
+    var v = [imageBuffer[0] / 255.0, imageBuffer[1] / 255.0, imageBuffer[2] / 255.0, imageBuffer[3] / 255.0];
+    console.log(dot(v, bitDec));*/
 
 
-        var v = [imageBuffer[0] / 255.0, imageBuffer[1] / 255.0];
-        //console.log(dot(v, bitDec));
+    //var v = [imageBuffer[0] / 255.0, imageBuffer[1] / 255.0];
+    //console.log(dot(v, bitDec));
 
-        //uniforms.texData.value = new THREE.DataTexture(imageBuffer, stepsPerFrame, 1, THREE.RGBAFormat);
-        uniforms.startTime.value = t;
+    //uniforms.texData.value = new THREE.DataTexture(imageBuffer, stepsPerFrame, 1, THREE.RGBAFormat);
+    // swap the textures
+    var dataTexture = bts ? bufferTextureA : bufferTextureB;
+    visualUniforms.dataTexture.value = dataTexture.texture;
+    debugBoxMaterial.map = bufferTexture.texture;
+    debugBoxMaterial.needsUpdate = true;
+    bts = !bts;
 
-        /*worldPos = toWorldCoods(nx, ny);
+    uniforms.startTime.value = t;
 
-        // TODO error
-        x = worldPos.x;
-        y = worldPos.y;
 
-        vertexArray[nextIndex] = worldPos.x;
-        vertexArray[nextIndex + 1] = worldPos.y;
-        //vertexArray[nextIndex + 2] = worldPos.z;
-        nextIndex += 3;
+    /*worldPos = toWorldCoods(nx, ny);
 
-        //Check if dynamic delta should be adjusted
-        if (pointIsInViewport(worldPos.x, worldPos.y)) {
-            const dx = history[iter * 2] - x; // TODO check delta
-            const dy = history[iter * 2 + 1] - y;
+    // TODO error
+    x = worldPos.x;
+    y = worldPos.y;
 
-            const dist = 500.0 * Math.sqrt(dx * dx + dy * dy);
-            rollingDelta = Math.min(rollingDelta, Math.max(delta / (dist + 1e-5), deltaMinimum * speedMult));
-            isOffScreen = false;
-        }
+    vertexArray[nextIndex] = worldPos.x;
+    vertexArray[nextIndex + 1] = worldPos.y;
+    //vertexArray[nextIndex + 2] = worldPos.z;
+    nextIndex += 3;
 
-        history[iter * 2] = x;
-        history[iter * 2 + 1] = y;*/
+    //Check if dynamic delta should be adjusted
+    if (pointIsInViewport(worldPos.x, worldPos.y)) {
+        const dx = history[iter * 2] - x; // TODO check delta
+        const dy = history[iter * 2 + 1] - y;
+
+        const dist = 500.0 * Math.sqrt(dx * dx + dy * dy);
+        rollingDelta = Math.min(rollingDelta, Math.max(delta / (dist + 1e-5), deltaMinimum * speedMult));
+        isOffScreen = false;
     }
 
-    t += 0.01 * stepsPerFrame;
+    history[iter * 2] = x;
+    history[iter * 2 + 1] = y;*/
+
 
     //Update the t variable
     /*  if (isOffScreen) {
@@ -260,12 +264,12 @@ var mouseX = 0, mouseY = 0;
 var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
 var camera, scene, renderer;
-var bufferCamera, bufferScene, bufferTexture;
+var bufferCamera, bufferScene, bufferTextureA, bufferTextureB, bts;
 init();
 animate();
 
 var points;
-
+var computePoints;
 var debugBoxMaterial;
 
 var uniforms;
@@ -287,15 +291,19 @@ function init() {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    bufferTexture = new THREE.WebGLRenderTarget(stepsPerFrame, 1, {
+    bufferTextureA = new THREE.WebGLRenderTarget(256, 256, {
         minFilter: THREE.LinearFilter,
         magFilter: THREE.NearestFilter
     });
-    // TODO texRenderer
+
+    bufferTextureB = new THREE.WebGLRenderTarget(256, 256, {
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.NearestFilter
+    });
 
     document.body.appendChild(renderer.domElement);
 
-    debugBoxMaterial = new THREE.MeshBasicMaterial({map: bufferTexture.texture});
+    debugBoxMaterial = new THREE.MeshBasicMaterial({map: null});
     //debugBoxMaterial = new THREE.MeshBasicMaterial({color: 0xff0000});
     var debugBoxGeometry = new THREE.BoxGeometry(1, 1, 1);
     var debugBoxObject = new THREE.Mesh(debugBoxGeometry, debugBoxMaterial);
@@ -317,8 +325,9 @@ function init() {
     );
 
     uniforms = {
-        resolution: {value: new THREE.Vector2(512, 512)},
-        texData: {type: "t", value: null},
+        stepsPerFrame: {value: 256},
+        iters: {value: 256},
+        resolution: {value: new THREE.Vector2(256, 256)},
         startTime: {value: t},
         paramsX: {value: matrixParamsX},
         paramsY: {value: matrixParamsY}
@@ -327,12 +336,24 @@ function init() {
     let computeShaderMaterial = new THREE.ShaderMaterial({
         uniforms: uniforms,
         fragmentShader: document.getElementById('fragmentComputeShader').textContent,
-        vertexShader: document.getElementById('vertexComputeShader').textContent,
+    });
+
+    visualUniforms = {
+        dataTexture: {type: "t", value: null},
+    };
+
+    let visualShaderMaterial = new THREE.ShaderMaterial({
+        uniforms: visualUniforms,
+        vertexShader: document.getElementById('vertexShader').textContent,
+        fragmentShader: document.getElementById('fragmentShader').textContent,
     });
 
     var bufferBoxGeometry = new THREE.BoxGeometry(1, 1, 1);
     var bufferBoxObject = new THREE.Mesh(bufferBoxGeometry, computeShaderMaterial);
     bufferScene.add(bufferBoxObject);
+
+    computePoints = new THREE.Points(computeBufferGeometry, visualShaderMaterial);
+    scene.add(computePoints);
 
     var starsMaterial = new THREE.PointsMaterial({size: 1, color: 0xff8888});
     points = new THREE.Points(bufferGeometry, starsMaterial);
@@ -403,7 +424,7 @@ function dot(a, b) {
 function animate() {
     stats.begin();
 
-    //applyChaos();
+    applyChaos();
     points.geometry.attributes.position.needsUpdate = true;
     points.geometry.computeBoundingSphere();
 
