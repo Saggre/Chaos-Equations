@@ -33,17 +33,13 @@
         return enc;
     }
 
-    float decodeFloatVec2 (vec2 v) {
-        return dot(v, vec2(1., 1./255.));
-    }
-
     void main() {
         vec2 uv = gl_FragCoord.xy / resolution.xy;
         vec4 data = texture2D(texData, uv);
 
         // TODO variable timestep
 
-        float t = startTime + 0.01 * gl_FragCoord.x;
+        float t = startTime + 0.00001 * gl_FragCoord.x;
 
         float x = t * gl_FragCoord.y;
         float y = t * gl_FragCoord.y;
@@ -66,29 +62,60 @@
             y = ny;
         }
 
+        // General division
+        x /= 4.;
+        y /= 4.;
+
+        // Clamp to viewport where viewport is 0-10
+        x = clamp(x, -5., 5.) + 5.;
+        y = clamp(y, -5., 5.) + 5.;
+
+        // Divide to pack into vec2
+        x /= 10.;
+        y /= 10.;
+
         gl_FragColor = vec4(encodeFloatVec2(x), encodeFloatVec2(y));
     }
 </script>
 
 <script id="vertexShader" type="x-shader/x-vertex">
+    uniform sampler2D dataTexture;
+
     varying vec3 vUv;
 
+    float decodeFloatVec2 (vec2 v) {
+        return dot(v, vec2(1., 1./255.));
+    }
+
     void main() {
+        //int dataX = mod(gl_VertexID, 256);
+        vec4 data = texture2D(dataTexture, vec2(int(position.x * 256.0), int(position.y * 256.0)));
+
+        float x = decodeFloatVec2(vec2(data.x, data.y));
+        float y = decodeFloatVec2(vec2(data.z, data.w));
+
+        // Unpack from (0.0, 1.0] float
+        x *= 10.;
+        y *= 10.;
+
+        // Center
+        x -= 5.;
+        y -= 5.;
+
         vUv = position;
-        gl_PointSize = 2.0;
-        vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
-        gl_Position = projectionMatrix * modelViewPosition;
+        gl_PointSize = 3.0;
+        vec4 modelViewPosition = modelViewMatrix * vec4(x, y, 1., 1.);
+        vec4 pos = projectionMatrix * modelViewPosition;
+        gl_Position = pos;
     }
 
 </script>
 
 <script id="fragmentShader" type="x-shader/x-fragment">
-    uniform vec3 colorA;
-    uniform vec4 params0;
     varying vec3 vUv;
 
     void main() {
-        gl_FragColor = vec4(colorA, 1.0);
+        gl_FragColor = vec4(1., 1., 1., 1.);
     }
 </script>
 
