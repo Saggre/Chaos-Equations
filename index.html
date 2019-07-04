@@ -8,44 +8,52 @@
 <script id="fragmentComputeShader" type="x-shader/x-fragment">
     // x = iter, y = step
     // x = r & g, y = b & a
-    uniform int stepsPerFrame;
     uniform int iters;
-    uniform vec2 resolution;
-    uniform sampler2D texData;
+    uniform int steps;
+    uniform sampler2D lastData;
     uniform mat3 paramsX;
     uniform mat3 paramsY;
     uniform float startTime;
+    uniform float deltaTime;
+
     varying vec3 vUv;
 
-    const vec4 bitEnc = vec4(1., 255., 65025., 16581375.);
+    const int MAX_ITERATIONS = 2048;
+
+    const vec2 bitEnc2 = vec2(1., 255.);
+    const vec4 bitEnc4 = vec4(1., 255., 65025., 16581375.);
 
     vec4 encodeFloatRGBA (float v) {
-        vec4 enc = bitEnc * v;
+        vec4 enc = bitEnc4 * v;
         enc = fract(enc);
         enc -= enc.yzww * vec2(1./255., 0.).xxxy;
         return enc;
     }
 
     vec2 encodeFloatVec2 (float v) {
-        vec2 enc = vec2(1., 255.) * v;
+        vec2 enc = bitEnc2 * v;
         enc = fract(enc);
         enc -= enc.yx * (1./255.);
         return enc;
     }
 
     void main() {
+        vec2 resolution = vec2(iters, steps);
         vec2 uv = gl_FragCoord.xy / resolution.xy;
-        vec4 data = texture2D(texData, uv);
+        vec4 last = texture2D(lastData, uv);
 
-        // TODO variable timestep
+        float t = startTime + deltaTime * float(int(gl_FragCoord.y));
 
-        float t = startTime + 0.001 * float(int(gl_FragCoord.y));
+        if (gl_FragCoord.x < 1.0 && gl_FragCoord.y < 1.0){
+            gl_FragColor = vec4(1., 0., 0., 1.);
+            return;
+        }
 
         float x = t;
         float y = t;
 
-        for (int iter = 0; iter < 256; iter++) {
-            if (iter > int(gl_FragCoord.x)){
+        for (int iter = 0; iter < MAX_ITERATIONS; iter++) {
+            if (iter > int(gl_FragCoord.x) || iter >= iters){
                 break;
             }
 

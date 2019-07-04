@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="BookmarkManager">
-    <bookmark url="file://$PROJECT_DIR$/js/chaos.js" line="34" mnemonic="8" />
-  </component>
   <component name="ChangeListManager">
     <list default="true" id="699cc43f-4349-4c01-a892-0d247ea23929" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/js/chaos.js" beforeDir="false" afterPath="$PROJECT_DIR$/js/chaos.js" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
     <ignored path="$PROJECT_DIR$/temp/" />
@@ -22,8 +20,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/js/chaos.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="541">
-              <caret line="399" column="6" selection-start-line="399" selection-start-column="6" selection-end-line="399" selection-end-column="6" />
+            <state relative-caret-position="442">
+              <caret line="239" column="90" selection-start-line="239" selection-start-column="90" selection-end-line="239" selection-end-column="90" />
             </state>
           </provider>
         </entry>
@@ -31,8 +29,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/index.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="646">
-              <caret line="41" column="34" selection-start-line="41" selection-start-column="34" selection-end-line="41" selection-end-column="34" />
+            <state relative-caret-position="1054">
+              <caret line="62" column="29" lean-forward="true" selection-start-line="62" selection-start-column="29" selection-end-line="62" selection-end-column="29" />
             </state>
           </provider>
         </entry>
@@ -49,12 +47,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>iterationli</find>
-      <find>array le</find>
-      <find>generatenew</find>
-      <find>fillpos</find>
-      <find>GPUComputationRenderer</find>
-      <find>initcomp</find>
       <find>gpucomp</find>
       <find>new</find>
       <find>extensions</find>
@@ -79,6 +71,12 @@
       <find>toworldcoo</find>
       <find>starttime</find>
       <find>buffertexture</find>
+      <find>uniforms</find>
+      <find>worldpos</find>
+      <find>var i</find>
+      <find>256</find>
+      <find>debug</find>
+      <find>debugboxmat</find>
     </findStrings>
     <replaceStrings>
       <replace>nextIndex</replace>
@@ -177,12 +175,12 @@
       <updated>1562101226775</updated>
       <workItem from="1562101229689" duration="19699000" />
       <workItem from="1562182727170" duration="33224000" />
-      <workItem from="1562259403459" duration="8216000" />
+      <workItem from="1562259403459" duration="11668000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="61139000" />
+    <option name="totallyTimeSpent" value="64591000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
@@ -258,15 +256,15 @@
     <entry file="file://$PROJECT_DIR$/js/GPUComputationRender.js" />
     <entry file="file://$PROJECT_DIR$/index.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="646">
-          <caret line="41" column="34" selection-start-line="41" selection-start-column="34" selection-end-line="41" selection-end-column="34" />
+        <state relative-caret-position="1054">
+          <caret line="62" column="29" lean-forward="true" selection-start-line="62" selection-start-column="29" selection-end-line="62" selection-end-column="29" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/js/chaos.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="541">
-          <caret line="399" column="6" selection-start-line="399" selection-start-column="6" selection-end-line="399" selection-end-column="6" />
+        <state relative-caret-position="442">
+          <caret line="239" column="90" selection-start-line="239" selection-start-column="90" selection-end-line="239" selection-end-column="90" />
         </state>
       </provider>
     </entry>
