@@ -5,7 +5,6 @@
     <link rel="stylesheet" type="text/css" href="css/style.css"/>
 </head>
 <body>
-
 <script id="fragmentComputeShader" type="x-shader/x-fragment">
     // x = iter, y = step
     // x = r & g, y = b & a
@@ -13,32 +12,36 @@
     uniform sampler2D texData;
     uniform mat3 paramsX;
     uniform mat3 paramsY;
-    uniform float time;
+    uniform float startTime;
     varying vec3 vUv;
+
+    const vec4 bitEnc = vec4(1., 255., 65025., 16581375.);
+
+    vec4 encodeFloatRGBA (float v) {
+        vec4 enc = bitEnc * v;
+        enc = fract(enc);
+        enc -= enc.yzww * vec2(1./255., 0.).xxxy;
+        return enc;
+    }
+
+    vec2 encodeFloatVec2 (float v) {
+        vec2 enc = vec2(1., 255.) * v;
+        enc = fract(enc);
+        enc -= enc.yx * (1./255.);
+        return enc;
+    }
+
+    float decodeFloatVec2 (vec2 v) {
+        return dot(v, vec2(1., 1./255.));
+    }
 
     void main() {
         vec2 uv = gl_FragCoord.xy / resolution.xy;
         vec4 data = texture2D(texData, uv);
 
-        float t = 0.0;
-        float x = 0.0;
-        float y = 0.0;
-
-        if (abs(gl_FragCoord.x) < 0.001 && abs(gl_FragCoord.y) < 0.001){ // If first pixel
-            t = time;
-        } else {
-            vec4 lastData = texture2D(texData, vec2(gl_FragCoord.x - 1.0, gl_FragCoord.y - 1.0) / resolution.xy);
-            if (abs(gl_FragCoord.x) < 0.001){ // If started new step
-                t = lastData.z;
-                t += 0.01;
-                x = t;
-                y = t;
-            } else { // Normal
-                x = lastData.x;
-                y = lastData.y;
-                t = lastData.z;
-            }
-        }
+        float t = startTime + 0.01 * gl_FragCoord.x;
+        float x = t;
+        float y = t;
 
         float xx = x * x;
         float yy = y * y;
@@ -49,10 +52,7 @@
         float nx = xx * paramsX[0][0] + yy * paramsX[1][0] + tt * paramsX[2][0] + xy * paramsX[0][1] + xt * paramsX[1][1] + yt * paramsX[2][1] + x * paramsX[0][2] + y * paramsX[1][2] + t * paramsX[2][2];
         float ny = xx * paramsY[0][0] + yy * paramsY[1][0] + tt * paramsY[2][0] + xy * paramsY[0][1] + xt * paramsY[1][1] + yt * paramsY[2][1] + x * paramsY[0][2] + y * paramsY[1][2] + t * paramsY[2][2];
 
-        //worldPos = toWorldCoods(nx, ny);
-
-        gl_FragColor = vec4(nx, ny, t, 1);
-
+        gl_FragColor = vec4(encodeFloatVec2(nx), vec2(1., 1.));
     }
 </script>
 
@@ -82,7 +82,6 @@
 <script src="js/dat.gui.min.js" type="text/javascript"></script>
 <script src="js/chanse.min.js" type="text/javascript"></script>
 <script src="js/stats.min.js" type="text/javascript"></script>
-<script src="js/GPUComputationRender.js" type="text/javascript"></script>
 <script src="js/chaos.js" type="text/javascript"></script>
 </body>
 </html>
