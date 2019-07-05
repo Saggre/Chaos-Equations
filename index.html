@@ -22,17 +22,17 @@
     uniform float pixelRatio;
     uniform sampler2D colorTexture;
 
-    const float MAX_ITERATIONS = 2048.0;
+    const int MAX_ITERATIONS = 2048;
 
     void main() {
-        float thisIter = position.x;
+        int thisIter = int(position.x);
         float t = startTime + deltaTime * position.y;
 
         vec3 pos = vec3(t, t, t);
         float xx, yy, tt, xy, xt, yt;
         vec3 ma, mb;
 
-        for (float iter = 0.0; iter < MAX_ITERATIONS; iter++) {
+        for (int iter = 0; iter < MAX_ITERATIONS; iter++) {
             if (iter > thisIter){
                 break;
             }
