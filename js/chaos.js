@@ -21,6 +21,7 @@ const max = 100000;
 //Global variables
 let windowW = window.innerWidth;
 let windowH = window.innerHeight;
+let pixelRatio = window.devicePixelRatio;
 let plotScale = 0.25;
 let plotX = 0.0;
 let plotY = 0.0;
@@ -263,6 +264,7 @@ function init() {
         paramsY0: {value: null},
         paramsY1: {value: null},
         paramsY2: {value: null},
+        pixelRatio: {value: pixelRatio},
         colorTexture: {value: createColorTexture()}
     };
 
