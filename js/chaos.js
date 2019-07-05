@@ -11,7 +11,7 @@ const numParams = 18;
 const iters = 512; //800
 const steps = 1024; //500;
 const deltaPerStep = 1e-5;
-const deltaMinimum = 1e-7;
+const deltaMinimum = 1e-6;
 //Static
 const tStart = -3.0;
 const tEnd = 3.0;
@@ -30,7 +30,6 @@ const screenWorldUnits = new THREE.Vector2(10.0, 10.0 * windowH / windowW);
 
 //Simulation variables
 var t = tStart;
-var time = tStart;
 
 var rollingDelta = deltaPerStep;
 var params = [];
@@ -41,6 +40,10 @@ var dotType = 0;
 var loadStarted = false;
 var shuffleEqu = true;
 var iterationLimit = false;
+
+var cpuVertexArray = new Float32Array(8 * 3);
+var cpuBufferGeometry = new THREE.BufferGeometry();
+cpuBufferGeometry.addAttribute('position', new THREE.BufferAttribute(cpuVertexArray, 3));
 
 var computeVertexArray = new Float32Array(iters * steps * 3);
 var computeBufferGeometry = new THREE.BufferGeometry();
@@ -93,19 +96,18 @@ function resetPlot() {
     plotY = 0.0;
 }
 
-function toWorldCoods(x, y) {
-    var scaleDivider = 4.0;
-    var nx = Math.sign(x) * Math.min(max, Math.abs(x));
-    var ny = Math.sign(y) * Math.min(max, Math.abs(y));
-    return new THREE.Vector2(nx / scaleDivider, ny / scaleDivider);
-}
+var lx, ly = 0;
 
-var lastPos = new THREE.Vector2(0, 0);
+function clamp(num, min, max) {
+    return num <= min ? min : num >= max ? max : num;
+}
 
 /**
  * Only do the first iteration on the CPU, and check delta
  */
 function getNextDeltaTime() {
+    var nextIndex = 0;
+
     var delta = deltaPerStep * speedMult;
     rollingDelta = rollingDelta * 0.99 + delta * 0.01;
 
@@ -113,40 +115,47 @@ function getNextDeltaTime() {
     var x = t;
     var y = t;
 
-    var xx = x * x;
-    var yy = y * y;
-    var tt = t * t;
-    var xy = x * y;
-    var xt = x * t;
-    var yt = y * t;
-    var nx = xx * params[0] + yy * params[1] + tt * params[2] + xy * params[3] + xt * params[4] + yt * params[5] + x * params[6] + y * params[7] + t * params[8];
-    var ny = xx * params[9] + yy * params[10] + tt * params[11] + xy * params[12] + xt * params[13] + yt * params[14] + x * params[15] + y * params[16] + t * params[17];
+    for (var iter = 0; iter < 8; iter++) {
+        var xx = x * x;
+        var yy = y * y;
+        var tt = t * t;
+        var xy = x * y;
+        var xt = x * t;
+        var yt = y * t;
+        x = xx * params[0] + yy * params[1] + tt * params[2] + xy * params[3] + xt * params[4] + yt * params[5] + x * params[6] + y * params[7] + t * params[8];
+        y = xx * params[9] + yy * params[10] + tt * params[11] + xy * params[12] + xt * params[13] + yt * params[14] + x * params[15] + y * params[16] + t * params[17];
 
-    var worldPos = toWorldCoods(nx, ny);
+        cpuVertexArray[nextIndex] = clamp(x, -10000, 10000) + 0.1;
+        cpuVertexArray[nextIndex + 1] = clamp(y, -10000, 10000);
+        cpuVertexArray[nextIndex + 2] = 0.0;
+        nextIndex += 3;
 
-    if (pointIsInViewport(worldPos.x, worldPos.y)) {
-        const dx = lastPos.x - worldPos.x; // TODO check delta
-        const dy = lastPos.y - worldPos.y;
+        if (pointIsInViewport(x, y)) {
+            const dx = lx - x; // TODO check delta
+            const dy = ly - y;
 
-        const dist = 500.0 * Math.sqrt(dx * dx + dy * dy);
-        rollingDelta = Math.min(rollingDelta, Math.max(delta / (dist + 1e-5), deltaMinimum * speedMult));
-        isOffScreen = false;
+            const dist = 500.0 * Math.sqrt(dx * dx + dy * dy);
+            rollingDelta = Math.min(rollingDelta, Math.max(delta / (dist + 1e-5), deltaMinimum * speedMult));
+            isOffScreen = false;
+        }
+
+        lx = x;
+        ly = y;
     }
 
-    lastPos = worldPos;
-
     if (isOffScreen) {
-        return 0.01;
+        return 0.001;
     }
 
     return rollingDelta;
+
 }
 
 function applyComputeChaos() {
 
-    if (time > tEnd) {
+    if (t > tEnd) {
         randParams();
-        time = tStart;
+        t = tStart;
     }
 
     var matrixParamsX = new THREE.Matrix3();
@@ -164,20 +173,22 @@ function applyComputeChaos() {
         params[15], params[16], params[17]
     );
 
-    uniforms.startTime.value = time;
     uniforms.paramsX.value = matrixParamsX;
     uniforms.paramsY.value = matrixParamsY;
 
     var deltaTime = getNextDeltaTime();
-    time += deltaTime * iters;
+
     uniforms.deltaTime.value = deltaTime;
+    uniforms.startTime.value = t;
+
+    t += deltaTime * steps;
 }
 
 
 // If point is in ortho viewport
 function pointIsInViewport(x, y) {
-    var sx = screenWorldUnits.x / 2.0;
-    var sy = screenWorldUnits.y / 2.0;
+    var sx = screenWorldUnits.x * 0.5;
+    var sy = screenWorldUnits.y * 0.5;
     return x > -sx && x < sx && y > -sy && y < sy;
 }
 
@@ -185,7 +196,6 @@ var mouseX = 0, mouseY = 0;
 var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
 var camera, scene, renderer;
-var bufferCamera, bufferScene, bufferTextureA, bufferTextureB, bts;
 init();
 animate();
 
@@ -245,7 +255,7 @@ function init() {
     uniforms = {
         iters: {value: iters},
         steps: {value: steps},
-        startTime: {value: time},
+        startTime: {value: t},
         deltaTime: {value: 0.01},
         paramsX: {value: matrixParamsX},
         paramsY: {value: matrixParamsY},
@@ -262,10 +272,16 @@ function init() {
     computePoints = new THREE.Points(computeBufferGeometry, visualShaderMaterial);
     scene.add(computePoints);
 
+    if (debug) {
+        var pointsMaterial = new THREE.PointsMaterial({color: 0xff0000, size: 5.0});
+        var debugPoints = new THREE.Points(cpuBufferGeometry, pointsMaterial);
+        scene.add(debugPoints);
+    }
+
     document.addEventListener('mousemove', onDocumentMouseMove, false);
     document.addEventListener('touchstart', onDocumentTouchStart, false);
     document.addEventListener('touchmove', onDocumentTouchMove, false);
-    //
+
     window.addEventListener('resize', onWindowResize, false);
 }
 
@@ -311,6 +327,11 @@ function animate() {
     stats.begin();
 
     applyComputeChaos();
+
+    if (debug) {
+        cpuBufferGeometry.attributes.position.needsUpdate = true;
+        cpuBufferGeometry.computeBoundingSphere();
+    }
 
     //renderer.setRenderTarget(null);
     renderer.render(scene, camera);

@@ -13,7 +13,7 @@
     uniform mat3 paramsX;
     uniform mat3 paramsY;
     uniform float startTime;
-    uniform float deltaTime;
+    uniform highp float deltaTime;
     uniform vec2 viewport;
     uniform sampler2D colorTexture;
 
@@ -46,6 +46,8 @@
             xx * paramsY[0][0] + yy * paramsY[1][0] + tt * paramsY[2][0] + xy * paramsY[0][1] + xt * paramsY[1][1] + yt * paramsY[2][1] + pos.x * paramsY[0][2] + pos.y * paramsY[1][2] + t * paramsY[2][2]
             );
         }
+
+        //pos *= 0.25;
 
         gl_PointSize = 1.0;
         vec4 modelViewPosition = modelViewMatrix * vec4(pos, 0., 1.);
