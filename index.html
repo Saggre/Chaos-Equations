@@ -1,7 +1,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
     <title>Chaos Equations | Saggre</title>
     <link rel="stylesheet" type="text/css" href="css/style.css"/>
 </head>
@@ -33,12 +33,12 @@
         vec3 ma, mb;
 
         for (int iter = 0; iter < MAX_ITERATIONS; iter++) {
-            if (iter > thisIter || iter >= iters){
+            if (iter > thisIter){
                 break;
             }
 
-            ma = vec3(pos.x * pos.x, pos.y * pos.y, t * t);
-            mb = vec3(pos.x * pos.y, pos.x * t, pos.y * t);
+            ma = vec3(pos.x * pos.x, pos.y * pos.y, pos.z * pos.z);
+            mb = vec3(pos.x * pos.y, pos.x * pos.z, pos.y * pos.z);
 
             pos.xy = vec2(
             dot(paramsX0, ma) + dot(paramsX1, mb) + dot(paramsX2, pos),

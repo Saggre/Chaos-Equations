@@ -8,8 +8,8 @@ var i;
 
 //Global constants
 const numParams = 18;
-const iters = 800; //800
-const steps = 500; //500;
+const iters = 768;
+const steps = 512;
 const deltaPerStep = 1e-5;
 const deltaMinimum = 1e-6;
 //Static
