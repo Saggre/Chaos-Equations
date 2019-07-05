@@ -25,15 +25,14 @@
         float t = startTime + deltaTime * position.y;
 
         vec3 pos = vec3(t, t, t);
-        vec3 ma, mb;
 
         for (int iter = 0; iter < MAX_ITERATIONS; iter++) {
             if (iter > thisIter){
                 break;
             }
 
-            ma = pos * pos;
-            mb = pos.xxy * pos.yzz;
+            vec3 ma = pos * pos;
+            vec3 mb = pos.xxy * pos.yzz;
 
             pos.xy = vec2(
             ma.x * px[0][0] + ma.y * px[1][0] + ma.z * px[2][0] + mb.x * px[0][1] + mb.y * px[1][1] + mb.z * px[2][1] + pos.x * px[0][2] + pos.y * px[1][2] + pos.z * px[2][2],
