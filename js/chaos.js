@@ -62,13 +62,11 @@ for (i = 2; i < computeVertexArray.length; i += 3) {
 
 // TODO random colors
 
-// Random color
 function getRandColor(seed) {
-    i += 1;
-    var r = Math.min(255, 50 + (i * 11909) % 256);
-    var g = Math.min(255, 50 + (i * 52973) % 256);
-    var b = Math.min(255, 50 + (i * 44111) % 256);
-    return THREE.Color(r / 255.0, g / 255.0, b / 255.0); // TODO alpha
+    var r = Math.min(255, 50 + (seed * 11909) % 256);
+    var g = Math.min(255, 50 + (seed * 52973) % 256);
+    var b = Math.min(255, 50 + (seed * 44111) % 256);
+    return new THREE.Color(r / 255.0, g / 255.0, b / 255.0);
 }
 
 // Generate random parameters for the chaos
@@ -195,6 +193,25 @@ var computePoints;
 
 var uniforms;
 
+function createColorTexture() {
+    var data = new Uint8Array(steps * iters * 3);
+
+    for (var i = 0; i < (steps * iters); i++) {
+        var color = getRandColor(i);
+
+        var stride = i * 3;
+
+        data[stride] = color.r * 255;
+        data[stride + 1] = color.g * 255;
+        data[stride + 2] = color.b * 255;
+    }
+
+    var texture = new THREE.DataTexture(data, iters, steps, THREE.RGBFormat);
+    texture.needsUpdate = true;
+
+    return texture;
+}
+
 function init() {
 
     randParams();
@@ -231,7 +248,9 @@ function init() {
         startTime: {value: time},
         deltaTime: {value: 0.01},
         paramsX: {value: matrixParamsX},
-        paramsY: {value: matrixParamsY}
+        paramsY: {value: matrixParamsY},
+        viewport: {value: screenWorldUnits},
+        colorTexture: {value: createColorTexture()}
     };
 
     let visualShaderMaterial = new THREE.ShaderMaterial({
