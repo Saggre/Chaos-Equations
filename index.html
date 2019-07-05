@@ -1,7 +1,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
-    <title>Title Goes Here</title>
+    <title>Chaos Equations | Saggre</title>
     <link rel="stylesheet" type="text/css" href="css/style.css"/>
 </head>
 <body>
@@ -10,45 +10,42 @@
 
     uniform int iters;
     uniform int steps;
-    uniform mat3 paramsX;
-    uniform mat3 paramsY;
+    uniform vec3 paramsX0;
+    uniform vec3 paramsX1;
+    uniform vec3 paramsX2;
+    uniform vec3 paramsY0;
+    uniform vec3 paramsY1;
+    uniform vec3 paramsY2;
     uniform float startTime;
-    uniform highp float deltaTime;
-    uniform vec2 viewport;
+    uniform float deltaTime;
     uniform sampler2D colorTexture;
 
     const int MAX_ITERATIONS = 2048;
 
-    bool pointIsInViewport(vec2 p) {
-        vec2 s = viewport * 0.5;
-        return p.x > -s.x && p.x < s.x && p.y > -s.y && p.y < s.y;
-    }
-
     void main() {
-        float t = startTime + deltaTime * float(int(position.y));
+        int thisIter = int(position.x);
+        float t = startTime + deltaTime * position.y;
 
-        vec2 pos = vec2(t, t);
+        vec3 pos = vec3(t, t, t);
+        float xx, yy, tt, xy, xt, yt;
+        vec3 ma, mb;
 
         for (int iter = 0; iter < MAX_ITERATIONS; iter++) {
-            if (iter > int(position.x) || iter >= iters){
+            if (iter > thisIter || iter >= iters){
                 break;
             }
 
-            float xx = pos.x * pos.x;
-            float yy = pos.y * pos.y;
-            float tt = t * t;
-            float xy = pos.x * pos.y;
-            float xt = pos.x * t;
-            float yt = pos.y * t;
+            ma = vec3(pos.x * pos.x, pos.y * pos.y, t * t);
+            mb = vec3(pos.x * pos.y, pos.x * t, pos.y * t);
 
-            pos = vec2(
-            xx * paramsX[0][0] + yy * paramsX[1][0] + tt * paramsX[2][0] + xy * paramsX[0][1] + xt * paramsX[1][1] + yt * paramsX[2][1] + pos.x * paramsX[0][2] + pos.y * paramsX[1][2] + t * paramsX[2][2],
-            xx * paramsY[0][0] + yy * paramsY[1][0] + tt * paramsY[2][0] + xy * paramsY[0][1] + xt * paramsY[1][1] + yt * paramsY[2][1] + pos.x * paramsY[0][2] + pos.y * paramsY[1][2] + t * paramsY[2][2]
+            pos.xy = vec2(
+            dot(paramsX0, ma) + dot(paramsX1, mb) + dot(paramsX2, pos),
+            dot(paramsY0, ma) + dot(paramsY1, mb) + dot(paramsY2, pos)
             );
         }
 
         gl_PointSize = 1.5;
-        vec4 modelViewPosition = modelViewMatrix * vec4(pos, 0., 1.);
+        vec4 modelViewPosition = modelViewMatrix * vec4(pos.xy, 0., 1.);
         gl_Position = projectionMatrix * modelViewPosition;
 
         vColor = texture2D(colorTexture, position.xy / vec2(iters, steps)).rgb;
