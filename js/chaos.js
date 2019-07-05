@@ -8,8 +8,8 @@ var i;
 
 //Global constants
 const numParams = 18;
-const iters = 512; //800
-const steps = 1024; //500;
+const iters = 800; //800
+const steps = 500; //500;
 const deltaPerStep = 1e-5;
 const deltaMinimum = 1e-6;
 //Static
@@ -66,9 +66,9 @@ for (i = 2; i < computeVertexArray.length; i += 3) {
 // TODO random colors
 
 function getRandColor(seed) {
-    var r = Math.min(255, 50 + (seed * 11909) % 256);
-    var g = Math.min(255, 50 + (seed * 52973) % 256);
-    var b = Math.min(255, 50 + (seed * 44111) % 256);
+    var r = Math.min(255, 90 + (seed * 11909) % 256);
+    var g = Math.min(255, 90 + (seed * 52973) % 256);
+    var b = Math.min(255, 90 + (seed * 44111) % 256);
     return new THREE.Color(r / 255.0, g / 255.0, b / 255.0);
 }
 
