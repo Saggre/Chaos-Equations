@@ -1,5 +1,5 @@
 // Debug
-const debug = true;
+const debug = false;
 const stats = new Stats();
 stats.showPanel(0);
 document.body.appendChild(stats.dom);
@@ -50,8 +50,8 @@ computeBufferGeometry.addAttribute('position', new THREE.BufferAttribute(compute
 var rowCounter = 0;
 var colCounter = 0;
 for (i = 2; i < computeVertexArray.length; i += 3) {
-    computeVertexArray[i - 2] = rowCounter / iters;
-    computeVertexArray[i - 1] = colCounter / steps;
+    computeVertexArray[i - 2] = rowCounter;// / iters;
+    computeVertexArray[i - 1] = colCounter;// / steps;
 
     rowCounter++;
     if (rowCounter >= iters) {
@@ -170,15 +170,6 @@ function applyComputeChaos() {
     uniforms.paramsX.value = matrixParamsX;
     uniforms.paramsY.value = matrixParamsY;
 
-    renderer.setRenderTarget(bts ? bufferTextureA : bufferTextureB);
-    renderer.render(bufferScene, bufferCamera);
-
-    uniforms.lastData.value = (bts ? bufferTextureA.texture : bufferTextureB.texture);
-    visualUniforms.dataTexture.value = (bts ? bufferTextureA.texture : bufferTextureB.texture);
-    debugBoxMaterial.map = (bts ? bufferTextureA.texture : bufferTextureB.texture);
-
-    bts = !bts;
-
     var deltaTime = getNextDeltaTime();
     time += deltaTime * iters;
     uniforms.deltaTime.value = deltaTime;
@@ -200,9 +191,7 @@ var bufferCamera, bufferScene, bufferTextureA, bufferTextureB, bts;
 init();
 animate();
 
-var points;
 var computePoints;
-var debugBoxMaterial;
 
 var uniforms;
 
@@ -210,36 +199,16 @@ function init() {
 
     randParams();
 
-    bufferCamera = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 1, 1000);
-    bufferCamera.position.z = 10;
-
     camera = new THREE.OrthographicCamera(screenWorldUnits.x / -2, screenWorldUnits.x / 2, screenWorldUnits.y / 2, screenWorldUnits.y / -2, 1, 1000);
     camera.position.z = 10;
 
     scene = new THREE.Scene();
-    bufferScene = new THREE.Scene();
 
     renderer = new THREE.WebGLRenderer({antialias: true});
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    bufferTextureA = new THREE.WebGLRenderTarget(iters, steps, {
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.NearestFilter
-    });
-
-    bufferTextureB = new THREE.WebGLRenderTarget(iters, steps, {
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.NearestFilter
-    });
-
     document.body.appendChild(renderer.domElement);
-
-    // For viewing the generated texture
-    debugBoxMaterial = new THREE.MeshBasicMaterial({map: null});
-    var debugBoxGeometry = new THREE.BoxGeometry(screenWorldUnits.x, screenWorldUnits.y, 1);
-    var debugBoxObject = new THREE.Mesh(debugBoxGeometry, debugBoxMaterial);
-    scene.add(debugBoxObject);
 
     var matrixParamsX = new THREE.Matrix3();
     var matrixParamsY = new THREE.Matrix3();
@@ -257,7 +226,6 @@ function init() {
     );
 
     uniforms = {
-        lastData: {value: null},
         iters: {value: iters},
         steps: {value: steps},
         startTime: {value: time},
@@ -266,24 +234,11 @@ function init() {
         paramsY: {value: matrixParamsY}
     };
 
-    let computeShaderMaterial = new THREE.ShaderMaterial({
-        uniforms: uniforms,
-        fragmentShader: document.getElementById('fragmentComputeShader').textContent,
-    });
-
-    visualUniforms = {
-        dataTexture: {value: null},
-    };
-
     let visualShaderMaterial = new THREE.ShaderMaterial({
-        uniforms: visualUniforms,
+        uniforms: uniforms,
         vertexShader: document.getElementById('vertexShader').textContent,
         fragmentShader: document.getElementById('fragmentShader').textContent,
     });
-
-    var bufferBoxGeometry = new THREE.BoxGeometry(1, 1, 1);
-    var bufferBoxObject = new THREE.Mesh(bufferBoxGeometry, computeShaderMaterial);
-    bufferScene.add(bufferBoxObject);
 
     computePoints = new THREE.Points(computeBufferGeometry, visualShaderMaterial);
     scene.add(computePoints);
@@ -338,7 +293,7 @@ function animate() {
 
     applyComputeChaos();
 
-    renderer.setRenderTarget(null);
+    //renderer.setRenderTarget(null);
     renderer.render(scene, camera);
     stats.end();
 

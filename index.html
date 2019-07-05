@@ -5,55 +5,29 @@
     <link rel="stylesheet" type="text/css" href="css/style.css"/>
 </head>
 <body>
-<script id="fragmentComputeShader" type="x-shader/x-fragment">
-    // x = iter, y = step
-    // x = r & g, y = b & a
+<script id="vertexShader" type="x-shader/x-vertex">
     uniform int iters;
     uniform int steps;
-    uniform sampler2D lastData;
     uniform mat3 paramsX;
     uniform mat3 paramsY;
     uniform float startTime;
     uniform float deltaTime;
 
-    varying vec3 vUv;
-
     const int MAX_ITERATIONS = 2048;
 
-    const vec2 bitEnc2 = vec2(1., 255.);
-    const vec4 bitEnc4 = vec4(1., 255., 65025., 16581375.);
-
-    vec4 encodeFloatRGBA (float v) {
-        vec4 enc = bitEnc4 * v;
-        enc = fract(enc);
-        enc -= enc.yzww * vec2(1./255., 0.).xxxy;
-        return enc;
-    }
-
-    vec2 encodeFloatVec2 (float v) {
-        vec2 enc = bitEnc2 * v;
-        enc = fract(enc);
-        enc -= enc.yx * (1./255.);
-        return enc;
+    bool pointIsInViewport(vec2 p) {
+        vec2 s = p * 0.5;
+        return p.x > -s.x && p.x < s.x && p.y > -s.y && p.y < s.y;
     }
 
     void main() {
-        vec2 resolution = vec2(iters, steps);
-        vec2 uv = gl_FragCoord.xy / resolution.xy;
-        vec4 last = texture2D(lastData, uv);
-
-        float t = startTime + deltaTime * float(int(gl_FragCoord.y));
-
-        if (gl_FragCoord.x < 1.0 && gl_FragCoord.y < 1.0){
-            gl_FragColor = vec4(1., 0., 0., 1.);
-            return;
-        }
+        float t = startTime + deltaTime * float(int(position.y));
 
         float x = t;
         float y = t;
 
         for (int iter = 0; iter < MAX_ITERATIONS; iter++) {
-            if (iter > int(gl_FragCoord.x) || iter >= iters){
+            if (iter > int(position.x) || iter >= iters){
                 break;
             }
 
@@ -70,56 +44,16 @@
             y = ny;
         }
 
-        // General division
-        x /= 4.;
-        y /= 4.;
+        vec4 vertexPosition = vec4(x, y, 0., 1.);
 
-        // Clamp to viewport where viewport is 0-10
-        x = clamp(x, -5., 5.) + 5.;
-        y = clamp(y, -5., 5.) + 5.;
-
-        // Divide to pack into vec2
-        x /= 10.;
-        y /= 10.;
-
-        gl_FragColor = vec4(encodeFloatVec2(x), encodeFloatVec2(y));
-    }
-</script>
-
-<script id="vertexShader" type="x-shader/x-vertex">
-    uniform sampler2D dataTexture;
-
-    varying vec3 vUv;
-
-    float decodeFloatVec2 (vec2 v) {
-        return dot(v, vec2(1., 1./255.));
-    }
-
-    void main() {
-        vec4 data = texture2D(dataTexture, vec2(position.x, position.y));
-
-        float x = decodeFloatVec2(vec2(data.x, data.y));
-        float y = decodeFloatVec2(vec2(data.z, data.w));
-
-        // Unpack from (0.0, 1.0] float
-        x *= 10.;
-        y *= 10.;
-
-        // Center
-        x -= 5.;
-        y -= 5.;
-
-        vUv = position;
         gl_PointSize = 1.0;
-        vec4 modelViewPosition = modelViewMatrix * vec4(x, y, 1., 1.);
-        vec4 pos = projectionMatrix * modelViewPosition;
-        gl_Position = pos;
+        vec4 modelViewPosition = modelViewMatrix * vertexPosition;
+        gl_Position = projectionMatrix * modelViewPosition;
     }
 
 </script>
 
 <script id="fragmentShader" type="x-shader/x-fragment">
-    varying vec3 vUv;
 
     void main() {
         gl_FragColor = vec4(1., 1., 1., 1.);
