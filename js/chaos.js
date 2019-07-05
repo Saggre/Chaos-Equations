@@ -159,30 +159,23 @@ function applyComputeChaos() {
         t = tStart;
     }
 
-    var matrixParamsX = new THREE.Matrix3();
-    var matrixParamsY = new THREE.Matrix3();
+    var paramsX = new THREE.Matrix3();
+    var paramsY = new THREE.Matrix3();
 
-    var paramsX = [
-        new THREE.Vector3(params[0], params[1], params[2]),
-        new THREE.Vector3(params[3], params[4], params[5]),
-        new THREE.Vector3(params[6], params[7], params[8])
-    ];
+    paramsX.set(
+        params[0], params[1], params[2],
+        params[3], params[4], params[5],
+        params[6], params[7], params[8]
+    );
 
-    var paramsY = [
-        new THREE.Vector3(params[9], params[10], params[11]),
-        new THREE.Vector3(params[12], params[13], params[14]),
-        new THREE.Vector3(params[15], params[16], params[17])
-    ];
+    paramsY.set(
+        params[9], params[10], params[11],
+        params[12], params[13], params[14],
+        params[15], params[16], params[17]
+    );
 
-    uniforms.paramsX0.value = paramsX[0];
-    uniforms.paramsX1.value = paramsX[1];
-    uniforms.paramsX2.value = paramsX[2];
-    uniforms.paramsY0.value = paramsY[0];
-    uniforms.paramsY1.value = paramsY[1];
-    uniforms.paramsY2.value = paramsY[2];
-
-    uniforms.paramsX.value = matrixParamsX;
-    uniforms.paramsY.value = matrixParamsY;
+    uniforms.px.value = paramsX;
+    uniforms.py.value = paramsY;
 
     var deltaTime = getNextDeltaTime();
 
@@ -256,14 +249,8 @@ function init() {
         steps: {value: steps},
         startTime: {value: t},
         deltaTime: {value: 0.01},
-        paramsX: {value: null},
-        paramsY: {value: null},
-        paramsX0: {value: null},
-        paramsX1: {value: null},
-        paramsX2: {value: null},
-        paramsY0: {value: null},
-        paramsY1: {value: null},
-        paramsY2: {value: null},
+        px: {value: null},
+        py: {value: null},
         pixelRatio: {value: pixelRatio},
         colorTexture: {value: createColorTexture()}
     };

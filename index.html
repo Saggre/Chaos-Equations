@@ -11,12 +11,8 @@
 
     uniform float iters;
     uniform float steps;
-    uniform vec3 paramsX0;
-    uniform vec3 paramsX1;
-    uniform vec3 paramsX2;
-    uniform vec3 paramsY0;
-    uniform vec3 paramsY1;
-    uniform vec3 paramsY2;
+    uniform mat3 px;
+    uniform mat3 py;
     uniform float startTime;
     uniform float deltaTime;
     uniform float pixelRatio;
@@ -40,8 +36,8 @@
             mb = pos.xxy * pos.yzz;
 
             pos.xy = vec2(
-            dot(paramsX0, ma) + dot(paramsX1, mb) + dot(paramsX2, pos),
-            dot(paramsY0, ma) + dot(paramsY1, mb) + dot(paramsY2, pos)
+            ma.x * px[0][0] + ma.y * px[1][0] + ma.z * px[2][0] + mb.x * px[0][1] + mb.y * px[1][1] + mb.z * px[2][1] + pos.x * px[0][2] + pos.y * px[1][2] + pos.z * px[2][2],
+            ma.x * py[0][0] + ma.y * py[1][0] + ma.z * py[2][0] + mb.x * py[0][1] + mb.y * py[1][1] + mb.z * py[2][1] + pos.x * py[0][2] + pos.y * py[1][2] + pos.z * py[2][2]
             );
         }
 
