@@ -9,8 +9,8 @@
 <script id="vertexShader" type="x-shader/x-vertex">
     varying vec3 vColor;
 
-    uniform int iters;
-    uniform int steps;
+    uniform float iters;
+    uniform float steps;
     uniform vec3 paramsX0;
     uniform vec3 paramsX1;
     uniform vec3 paramsX2;
@@ -22,17 +22,17 @@
     uniform float pixelRatio;
     uniform sampler2D colorTexture;
 
-    const int MAX_ITERATIONS = 2048;
+    const float MAX_ITERATIONS = 2048.0;
 
     void main() {
-        int thisIter = int(position.x);
+        float thisIter = position.x;
         float t = startTime + deltaTime * position.y;
 
         vec3 pos = vec3(t, t, t);
         float xx, yy, tt, xy, xt, yt;
         vec3 ma, mb;
 
-        for (int iter = 0; iter < MAX_ITERATIONS; iter++) {
+        for (float iter = 0.0; iter < MAX_ITERATIONS; iter++) {
             if (iter > thisIter){
                 break;
             }
@@ -41,7 +41,7 @@
             mb = vec3(pos.x * pos.y, pos.x * pos.z, pos.y * pos.z);
 
             pos.xy = vec2(
-            dot(paramsX0, ma) + dot(paramsX1, mb) + dot(paramsX2, pos),
+            paramsX0.x * ma.x + paramsX0.y * ma.y + paramsX0.z * ma.z + dot(paramsX1, mb) + dot(paramsX2, pos),
             dot(paramsY0, ma) + dot(paramsY1, mb) + dot(paramsY2, pos)
             );
         }
