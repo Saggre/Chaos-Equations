@@ -10,8 +10,11 @@ var i;
 const numParams = 18;
 const iters = 512;
 const steps = 512;
+const deltaMaximum = 1e-3;
+const deltaMinimum = 1e-7;
 const deltaPerStep = 1e-5;
-const deltaMinimum = 1e-6;
+var rollingDelta = deltaPerStep;
+
 //Static
 const tStart = -3.0;
 const tEnd = 3.0;
@@ -32,7 +35,6 @@ const screenWorldUnits = new THREE.Vector2(5.0, 5.0 * windowH / windowW);
 //Simulation variables
 var t = tStart;
 
-var rollingDelta = deltaPerStep;
 var params = [];
 var speedMult = 1.0;
 var paused = false;
@@ -42,7 +44,7 @@ var loadStarted = false;
 var shuffleEqu = true;
 var iterationLimit = false;
 
-var cpuVertexArray = new Float32Array(8 * 3);
+var cpuVertexArray = new Float32Array(iters * 3);
 var cpuBufferGeometry = new THREE.BufferGeometry();
 cpuBufferGeometry.addAttribute('position', new THREE.BufferAttribute(cpuVertexArray, 3));
 
@@ -107,45 +109,54 @@ function clamp(num, min, max) {
  * Only do the first iteration on the CPU, and check delta
  */
 function getNextDeltaTime() {
+    var t2 = t;
+
     var nextIndex = 0;
+
+    var isOffScreen = true;
+    var x = t2;
+    var y = t2;
 
     var delta = deltaPerStep * speedMult;
     rollingDelta = rollingDelta * 0.99 + delta * 0.01;
 
-    var isOffScreen = true;
-    var x = t;
-    var y = t;
+    for (i = 0; i < iters; i++) {
 
-    for (var iter = 0; iter < 8; iter++) {
         var xx = x * x;
         var yy = y * y;
-        var tt = t * t;
+        var tt = t2 * t2;
         var xy = x * y;
-        var xt = x * t;
-        var yt = y * t;
-        x = xx * params[0] + yy * params[1] + tt * params[2] + xy * params[3] + xt * params[4] + yt * params[5] + x * params[6] + y * params[7] + t * params[8];
-        y = xx * params[9] + yy * params[10] + tt * params[11] + xy * params[12] + xt * params[13] + yt * params[14] + x * params[15] + y * params[16] + t * params[17];
+        var xt = x * t2;
+        var yt = y * t2;
+        var nx = xx * params[0] + yy * params[1] + tt * params[2] + xy * params[3] + xt * params[4] + yt * params[5] + x * params[6] + y * params[7] + t2 * params[8];
+        var ny = xx * params[9] + yy * params[10] + tt * params[11] + xy * params[12] + xt * params[13] + yt * params[14] + x * params[15] + y * params[16] + t2 * params[17];
 
-        cpuVertexArray[nextIndex] = clamp(x, -10000, 10000) + 0.1;
-        cpuVertexArray[nextIndex + 1] = clamp(y, -10000, 10000);
+        nx = clamp(nx, -10000, 10000);
+        ny = clamp(ny, -10000, 10000);
+
+        y = ny;
+        x = nx;
+
+        cpuVertexArray[nextIndex] = nx + 0.1;
+        cpuVertexArray[nextIndex + 1] = ny;
         cpuVertexArray[nextIndex + 2] = 0.0;
         nextIndex += 3;
 
-        if (pointIsInViewport(x, y)) {
-            const dx = lx - x; // TODO check delta
-            const dy = ly - y;
+        if (pointIsInViewport(nx, ny)) {
+            const dx = lx - nx;
+            const dy = ly - ny;
 
             const dist = 500.0 * Math.sqrt(dx * dx + dy * dy);
             rollingDelta = Math.min(rollingDelta, Math.max(delta / (dist + 1e-5), deltaMinimum * speedMult));
             isOffScreen = false;
         }
 
-        lx = x;
-        ly = y;
+        lx = nx;
+        ly = ny;
     }
 
     if (isOffScreen) {
-        return 0.001;
+        return deltaMaximum;
     }
 
     return rollingDelta;
@@ -178,11 +189,13 @@ function applyComputeChaos() {
     uniforms.py.value = paramsY;
 
     var deltaTime = getNextDeltaTime();
+    console.log(deltaTime);
 
     uniforms.deltaTime.value = deltaTime;
     uniforms.startTime.value = t;
 
     t += deltaTime * steps;
+
 }
 
 
@@ -265,7 +278,7 @@ function init() {
     scene.add(computePoints);
 
     if (debug) {
-        var pointsMaterial = new THREE.PointsMaterial({color: 0xff0000, size: 5.0});
+        var pointsMaterial = new THREE.PointsMaterial({color: 0xff0000, size: 2.0});
         var debugPoints = new THREE.Points(cpuBufferGeometry, pointsMaterial);
         scene.add(debugPoints);
     }
@@ -327,6 +340,7 @@ function animate() {
 
     //renderer.setRenderTarget(null);
     renderer.render(scene, camera);
+
     stats.end();
 
     requestAnimationFrame(animate);
