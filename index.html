@@ -29,7 +29,6 @@
         float t = startTime + deltaTime * position.y;
 
         vec3 pos = vec3(t, t, t);
-        float xx, yy, tt, xy, xt, yt;
         vec3 ma, mb;
 
         for (int iter = 0; iter < MAX_ITERATIONS; iter++) {
@@ -37,11 +36,11 @@
                 break;
             }
 
-            ma = vec3(pos.x * pos.x, pos.y * pos.y, pos.z * pos.z);
-            mb = vec3(pos.x * pos.y, pos.x * pos.z, pos.y * pos.z);
+            ma = pos * pos;
+            mb = pos.xxy * pos.yzz;
 
             pos.xy = vec2(
-            paramsX0.x * ma.x + paramsX0.y * ma.y + paramsX0.z * ma.z + dot(paramsX1, mb) + dot(paramsX2, pos),
+            dot(paramsX0, ma) + dot(paramsX1, mb) + dot(paramsX2, pos),
             dot(paramsY0, ma) + dot(paramsY1, mb) + dot(paramsY2, pos)
             );
         }
