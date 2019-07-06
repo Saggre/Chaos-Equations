@@ -1,84 +1,151 @@
-// Debug
+"use strict";
+
+// Debug variables
 const debug = false;
 const stats = new Stats();
-stats.showPanel(0);
-document.body.appendChild(stats.dom);
 
 var i;
 
-//Global constants
-const numParams = 18;
-const iters = 512;
-const steps = 512;
+// Time variables and constants
 const deltaMaximum = 1e-3;
 const deltaMinimum = 1e-7;
 const deltaPerStep = 1e-5;
-var rollingDelta = deltaPerStep;
-
-//Static
 const tStart = -3.0;
 const tEnd = 3.0;
+let rollingDelta = deltaPerStep;
 
-const max = 100000;
+// Computational and simulation variables
+let iters = 512;
+let steps = 512;
+let t = tStart;
+let params = [];
+let paused = false;
 
-//Global variables
+// THREE.js variables
+let camera, scene, renderer;
+let computePoints;
+let uniforms;
+
+// DOM variables
 let windowW = window.innerWidth;
 let windowH = window.innerHeight;
-let pixelRatio = window.devicePixelRatio;
-let plotScale = 0.25;
-let plotX = 0.0;
-let plotY = 0.0;
 
 // Viewport in world units
 const screenWorldUnits = new THREE.Vector2(5.0, 5.0 * windowH / windowW);
 
-//Simulation variables
-var t = tStart;
+// Base27 conversion
+const CHAR_TO_N = {
+    _: 0,
+    A: 1, N: 14,
+    B: 2, O: 15,
+    C: 3, P: 16,
+    D: 4, Q: 17,
+    E: 5, R: 18,
+    F: 6, S: 19,
+    G: 7, T: 20,
+    H: 8, U: 21,
+    I: 9, V: 22,
+    J: 10, W: 23,
+    K: 11, X: 24,
+    L: 12, Y: 25,
+    M: 13, Z: 26,
+};
 
-var params = [];
-var speedMult = 1.0;
-var paused = false;
-var trailType = 0;
-var dotType = 0;
-var loadStarted = false;
-var shuffleEqu = true;
-var iterationLimit = false;
 
+// Debug points array
 var cpuVertexArray = new Float32Array(iters * 3);
 var cpuBufferGeometry = new THREE.BufferGeometry();
 cpuBufferGeometry.addAttribute('position', new THREE.BufferAttribute(cpuVertexArray, 3));
 
+// GPU points array
 var computeVertexArray = new Float32Array(iters * steps * 3);
 var computeBufferGeometry = new THREE.BufferGeometry();
 computeBufferGeometry.addAttribute('position', new THREE.BufferAttribute(computeVertexArray, 3));
 
-// Set vertex positions on pixel coordinates
-var rowCounter = 0;
-var colCounter = 0;
-for (i = 2; i < computeVertexArray.length; i += 3) {
-    computeVertexArray[i - 2] = rowCounter;// / iters;
-    computeVertexArray[i - 1] = colCounter;// / steps;
+/**
+ * Sets everything up
+ */
+function init() {
 
-    rowCounter++;
-    if (rowCounter >= iters) {
-        rowCounter = 0;
-        colCounter++;
+    if (debug) {
+        stats.showPanel(0);
+        document.body.appendChild(stats.dom);
+    }
+
+    initVertices();
+    randParams(params);
+
+    camera = new THREE.OrthographicCamera(screenWorldUnits.x / -2, screenWorldUnits.x / 2, screenWorldUnits.y / 2, screenWorldUnits.y / -2, 1, 1000);
+    camera.position.z = 10;
+
+    scene = new THREE.Scene();
+
+    renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        precision: "mediump",
+        depth: false
+    });
+
+    renderer.debug.checkShaderErrors = debug;
+
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    document.body.appendChild(renderer.domElement);
+
+    uniforms = {
+        iters: {value: iters},
+        steps: {value: steps},
+        cpuTime: {value: t},
+        deltaTime: {value: 0.01},
+        px: {value: null},
+        py: {value: null},
+        pixelRatio: {value: window.devicePixelRatio},
+        colorTexture: {value: createColorTexture()}
+    };
+
+    let visualShaderMaterial = new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: document.getElementById('vertexShader').textContent,
+        fragmentShader: document.getElementById('fragmentShader').textContent,
+    });
+
+    computePoints = new THREE.Points(computeBufferGeometry, visualShaderMaterial);
+    scene.add(computePoints);
+
+    if (debug) {
+        var pointsMaterial = new THREE.PointsMaterial({color: 0xff0000, size: 2.0});
+        var debugPoints = new THREE.Points(cpuBufferGeometry, pointsMaterial);
+        scene.add(debugPoints);
+    }
+
+    window.addEventListener('resize', onWindowResize, false);
+}
+
+/**
+ * Set vertex positions on pixel coordinates
+ */
+function initVertices() {
+    var rowCounter = 0;
+    var colCounter = 0;
+    for (i = 2; i < computeVertexArray.length; i += 3) {
+        computeVertexArray[i - 2] = rowCounter;// / iters;
+        computeVertexArray[i - 1] = colCounter;// / steps;
+
+        rowCounter++;
+        if (rowCounter >= iters) {
+            rowCounter = 0;
+            colCounter++;
+        }
     }
 }
 
-// TODO random colors
-
-function getRandColor(seed) {
-    var r = Math.min(255, 90 + (seed * 11909) % 256);
-    var g = Math.min(255, 90 + (seed * 52973) % 256);
-    var b = Math.min(255, 90 + (seed * 44111) % 256);
-    return new THREE.Color(r / 255.0, g / 255.0, b / 255.0);
-}
-
-// Generate random parameters for the chaos
-function randParams() {
-    for (i = 0; i < numParams; i++) {
-        var r = chance.integer({min: 0, max: 3}); // TODO 3 inclusive?
+/**
+ * Generate random parameters for chaos
+ */
+function randParams(params) {
+    for (i = 0; i < 18; i++) {
+        var r = chance.integer({min: 0, max: 3});
         if (r === 0) {
             params[i] = 1.0;
         } else if (r === 1) {
@@ -91,45 +158,133 @@ function randParams() {
     if (debug) {
         console.log("Params set to: " + params);
     }
+
+    createUI(params);
 }
 
-function resetPlot() {
-    plotScale = 0.25;
-    plotX = 0.0;
-    plotY = 0.0;
+function createUI(params) {
+    document.getElementById("chaos-ui--x-equation").textContent = "x' = " + makeEquationStr(params.slice(0, 9));
+    document.getElementById("chaos-ui--y-equation").textContent = "y' = " + makeEquationStr(params.slice(9, 18));
+    document.getElementById("chaos-ui--code").textContent = "Code: " + paramsToString(params);
+    document.getElementById("chaos-ui--time").textContent = "t = " + t.toFixed(6);
 }
 
-var lx, ly = 0;
-
-function clamp(num, min, max) {
-    return num <= min ? min : num >= max ? max : num;
+function updateUI() {
+    document.getElementById("chaos-ui--time").textContent = "t = " + t.toFixed(6);
 }
 
 /**
- * Only do the first iteration on the CPU, and check delta
+ * Encodes 18 parameters into a string
+ * @param params
+ * @returns {string}
+ */
+function paramsToString(params) {
+    const base27 = "_ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    var a = 0;
+    var n = 0;
+    var result = "";
+    for (i = 0; i < 18; i++) {
+        a = a * 3 + Math.floor(params[i]) + 1;
+        n += 1;
+        if (n === 3) {
+            result += base27.charAt(a);
+            a = 0;
+            n = 0;
+        }
+    }
+    return result;
+}
+
+/**
+ * Decodes and sets params from a string
+ * @param str
+ * @param params
+ */
+function stringToParams(str, params) {
+    const ustr = str.toUpperCase();
+    for (i = 0; i < 18 / 3; i++) {
+        var a = 0;
+        const c = (i < ustr.length ? ustr.charAt(i) : '_');
+        if (CHAR_TO_N[c] >= CHAR_TO_N.A && CHAR_TO_N[c] <= CHAR_TO_N.Z) {
+            a = (CHAR_TO_N[c] - CHAR_TO_N.A) + 1;
+        }
+        params[i * 3 + 2] = Math.floor((a % 3) - 1.0);
+        a /= 3;
+        params[i * 3 + 1] = Math.floor((a % 3) - 1.0);
+        a /= 3;
+        params[i * 3] = Math.floor((a % 3) - 1.0);
+    }
+}
+
+function floatEquals(a, b) {
+    return Math.abs(b - a) < 0.001;
+}
+
+function makeEquationStr(params) {
+
+    /**
+     * @return {string}
+     */
+    function SIGN_OR_SKIP(param, mathVariable, isFirst = false) {
+        var string = "";
+
+        if (!floatEquals(param, 0.0)) {
+            if (isFirst) {
+                if (floatEquals(param, -1.0)) {
+                    string += "-";
+                }
+            } else {
+                if (floatEquals(param, -1.0)) {
+                    string += " - ";
+                } else {
+                    string += " + ";
+                }
+            }
+            string += mathVariable;
+        }
+
+        return string;
+    }
+
+    var equationStr = "";
+
+    equationStr += SIGN_OR_SKIP(params[0], "x\u00b2", true);
+    equationStr += SIGN_OR_SKIP(params[1], "y\u00b2");
+    equationStr += SIGN_OR_SKIP(params[2], "t\u00b2");
+    equationStr += SIGN_OR_SKIP(params[3], "xy");
+    equationStr += SIGN_OR_SKIP(params[4], "xt");
+    equationStr += SIGN_OR_SKIP(params[5], "yt");
+    equationStr += SIGN_OR_SKIP(params[6], "x");
+    equationStr += SIGN_OR_SKIP(params[7], "y");
+    equationStr += SIGN_OR_SKIP(params[8], "t");
+
+    return equationStr;
+}
+
+let ly = new Array(iters);
+let lx = new Array(iters);
+
+/**
+ * Only do the first iterations on the CPU, and check delta
  */
 function getNextDeltaTime() {
-    var t2 = t;
-
-    var nextIndex = 0;
-
     var isOffScreen = true;
-    var x = t2;
-    var y = t2;
+    let x = t;
+    let y = t;
 
-    var delta = deltaPerStep * speedMult;
+    var delta = deltaPerStep;
     rollingDelta = rollingDelta * 0.99 + delta * 0.01;
 
     for (i = 0; i < iters; i++) {
 
         var xx = x * x;
         var yy = y * y;
-        var tt = t2 * t2;
+        var tt = t * t;
         var xy = x * y;
-        var xt = x * t2;
-        var yt = y * t2;
-        var nx = xx * params[0] + yy * params[1] + tt * params[2] + xy * params[3] + xt * params[4] + yt * params[5] + x * params[6] + y * params[7] + t2 * params[8];
-        var ny = xx * params[9] + yy * params[10] + tt * params[11] + xy * params[12] + xt * params[13] + yt * params[14] + x * params[15] + y * params[16] + t2 * params[17];
+        var xt = x * t;
+        var yt = y * t;
+        var nx = xx * params[0] + yy * params[1] + tt * params[2] + xy * params[3] + xt * params[4] + yt * params[5] + x * params[6] + y * params[7] + t * params[8];
+        var ny = xx * params[9] + yy * params[10] + tt * params[11] + xy * params[12] + xt * params[13] + yt * params[14] + x * params[15] + y * params[16] + t * params[17];
 
         nx = clamp(nx, -10000, 10000);
         ny = clamp(ny, -10000, 10000);
@@ -137,22 +292,22 @@ function getNextDeltaTime() {
         y = ny;
         x = nx;
 
-        cpuVertexArray[nextIndex] = nx + 0.1;
-        cpuVertexArray[nextIndex + 1] = ny;
-        cpuVertexArray[nextIndex + 2] = 0.0;
-        nextIndex += 3;
+        if (debug) {
+            cpuVertexArray[i * 3] = nx + 0.1;
+            cpuVertexArray[i * 3 + 1] = ny;
+        }
 
         if (pointIsInViewport(nx, ny)) {
-            const dx = lx - nx;
-            const dy = ly - ny;
+            const dx = lx[i] - nx;
+            const dy = ly[i] - ny;
 
             const dist = 500.0 * Math.sqrt(dx * dx + dy * dy);
-            rollingDelta = Math.min(rollingDelta, Math.max(delta / (dist + 1e-5), deltaMinimum * speedMult));
+            rollingDelta = Math.min(rollingDelta, Math.max(delta / (dist + 1e-5), deltaMinimum));
             isOffScreen = false;
         }
 
-        lx = nx;
-        ly = ny;
+        lx[i] = nx;
+        ly[i] = ny;
     }
 
     if (isOffScreen) {
@@ -160,13 +315,15 @@ function getNextDeltaTime() {
     }
 
     return rollingDelta;
-
 }
 
-function applyComputeChaos() {
+/**
+ * Updates shader uniforms
+ */
+function updateShader() {
 
     if (t > tEnd) {
-        randParams();
+        randParams(params);
         t = tStart;
     }
 
@@ -189,39 +346,34 @@ function applyComputeChaos() {
     uniforms.py.value = paramsY;
 
     var deltaTime = getNextDeltaTime();
-    console.log(deltaTime);
 
     uniforms.deltaTime.value = deltaTime;
-    uniforms.startTime.value = t;
-
+    uniforms.cpuTime.value = t;
     t += deltaTime * steps;
 
 }
 
-
-// If point is in ortho viewport
+/**
+ * Checks if a a point is in viewport
+ * @param x
+ * @param y
+ * @returns {boolean}
+ */
 function pointIsInViewport(x, y) {
     var sx = screenWorldUnits.x * 0.5;
     var sy = screenWorldUnits.y * 0.5;
     return x > -sx && x < sx && y > -sy && y < sy;
 }
 
-var mouseX = 0, mouseY = 0;
-var windowHalfX = window.innerWidth / 2;
-var windowHalfY = window.innerHeight / 2;
-var camera, scene, renderer;
-init();
-animate();
-
-var computePoints;
-
-var uniforms;
-
+/**
+ * Creates a texture for vertex colors
+ * @returns {DataTexture}
+ */
 function createColorTexture() {
     var data = new Uint8Array(steps * iters * 3);
 
     for (var i = 0; i < (steps * iters); i++) {
-        var color = getRandColor(i);
+        var color = getNextColor(i);
 
         var stride = i * 3;
 
@@ -236,90 +388,56 @@ function createColorTexture() {
     return texture;
 }
 
-function init() {
-
-    randParams();
-
-    camera = new THREE.OrthographicCamera(screenWorldUnits.x / -2, screenWorldUnits.x / 2, screenWorldUnits.y / 2, screenWorldUnits.y / -2, 1, 1000);
-    camera.position.z = 10;
-
-    scene = new THREE.Scene();
-
-    renderer = new THREE.WebGLRenderer({
-        antialias: true,
-        precision: "lowp",
-        depth: false
-    });
-    renderer.debug.checkShaderErrors = debug;
-
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-
-    document.body.appendChild(renderer.domElement);
-
-    uniforms = {
-        iters: {value: iters},
-        steps: {value: steps},
-        startTime: {value: t},
-        deltaTime: {value: 0.01},
-        px: {value: null},
-        py: {value: null},
-        pixelRatio: {value: pixelRatio},
-        colorTexture: {value: createColorTexture()}
-    };
-
-    let visualShaderMaterial = new THREE.ShaderMaterial({
-        uniforms: uniforms,
-        vertexShader: document.getElementById('vertexShader').textContent,
-        fragmentShader: document.getElementById('fragmentShader').textContent,
-    });
-
-    computePoints = new THREE.Points(computeBufferGeometry, visualShaderMaterial);
-    scene.add(computePoints);
-
-    if (debug) {
-        var pointsMaterial = new THREE.PointsMaterial({color: 0xff0000, size: 2.0});
-        var debugPoints = new THREE.Points(cpuBufferGeometry, pointsMaterial);
-        scene.add(debugPoints);
-    }
-
-    document.addEventListener('mousemove', onDocumentMouseMove, false);
-    document.addEventListener('touchstart', onDocumentTouchStart, false);
-    document.addEventListener('touchmove', onDocumentTouchMove, false);
-
-    window.addEventListener('resize', onWindowResize, false);
+/**
+ * Returns bright colors
+ * @param seed
+ * @returns {Color}
+ */
+function getNextColor(pos) {
+    var r = Math.min(255, 90 + (pos * 11909) % 256);
+    var g = Math.min(255, 90 + (pos * 52973) % 256);
+    var b = Math.min(255, 90 + (pos * 44111) % 256);
+    return new THREE.Color(r / 255.0, g / 255.0, b / 255.0);
 }
 
+/**
+ * Animates
+ */
+function animate() {
+    stats.begin();
+
+    updateUI();
+    updateShader();
+
+    if (debug) {
+        cpuBufferGeometry.attributes.position.needsUpdate = true;
+        cpuBufferGeometry.computeBoundingSphere();
+    }
+
+    renderer.render(scene, camera);
+
+    stats.end();
+
+    requestAnimationFrame(animate);
+}
+
+/**
+ * On window resize
+ */
 function onWindowResize() {
-    windowHalfX = window.innerWidth / 2;
-    windowHalfY = window.innerHeight / 2;
+    windowW = window.innerWidth;
+    windowH = window.innerHeight;
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-//
-function onDocumentMouseMove(event) {
-    mouseX = event.clientX - windowHalfX;
-    mouseY = event.clientY - windowHalfY;
-}
-
-function onDocumentTouchStart(event) {
-    if (event.touches.length > 1) {
-        event.preventDefault();
-        mouseX = event.touches[0].pageX - windowHalfX;
-        mouseY = event.touches[0].pageY - windowHalfY;
-    }
-}
-
-function onDocumentTouchMove(event) {
-    if (event.touches.length == 1) {
-        event.preventDefault();
-        mouseX = event.touches[0].pageX - windowHalfX;
-        mouseY = event.touches[0].pageY - windowHalfY;
-    }
-}
-
+/**
+ * Dot product helper
+ * @param a
+ * @param b
+ * @returns {Number}
+ */
 function dot(a, b) {
     return a.map(function (x, i) {
         return a[i] * b[i];
@@ -328,20 +446,16 @@ function dot(a, b) {
     });
 }
 
-function animate() {
-    stats.begin();
-
-    applyComputeChaos();
-
-    if (debug) {
-        cpuBufferGeometry.attributes.position.needsUpdate = true;
-        cpuBufferGeometry.computeBoundingSphere();
-    }
-
-    //renderer.setRenderTarget(null);
-    renderer.render(scene, camera);
-
-    stats.end();
-
-    requestAnimationFrame(animate);
+/**
+ * Clamp helper
+ * @param num
+ * @param min
+ * @param max
+ * @returns {Number}
+ */
+function clamp(num, min, max) {
+    return num <= min ? min : num >= max ? max : num;
 }
+
+init();
+animate();

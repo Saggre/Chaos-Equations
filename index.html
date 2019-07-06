@@ -3,9 +3,18 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
     <title>Chaos Equations | Saggre</title>
+    <link href="https://fonts.googleapis.com/css?family=Karla|Montserrat&display=swap" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="css/style.css"/>
 </head>
 <body>
+
+<div class="chaos-ui">
+    <span class="chaos-ui--text" id="chaos-ui--x-equation"></span>
+    <span class="chaos-ui--text" id="chaos-ui--y-equation"></span>
+    <span class="chaos-ui--text" id="chaos-ui--time"></span>
+    <span class="chaos-ui--text" id="chaos-ui--code"></span>
+</div>
+
 <script id="vertexShader" type="x-shader/x-vertex">
     varying vec3 vColor;
 
@@ -13,7 +22,7 @@
     uniform float steps;
     uniform mat3 px;
     uniform mat3 py;
-    uniform float startTime;
+    uniform float cpuTime;
     uniform float deltaTime;
     uniform float pixelRatio;
     uniform sampler2D colorTexture;
@@ -22,7 +31,7 @@
 
     void main() {
         int thisIter = int(position.x);
-        float t = startTime + deltaTime * position.y;
+        float t = cpuTime + deltaTime * position.y;
 
         vec3 pos = vec3(t, t, t);
 
@@ -44,7 +53,11 @@
         vec4 modelViewPosition = modelViewMatrix * vec4(pos.xy, 0., 1.);
         gl_Position = projectionMatrix * modelViewPosition;
 
-        vColor = texture2D(colorTexture, position.xy / vec2(iters, steps)).rgb;
+        if (position.x > 1.0 && position.y > 1.0){
+            vColor = texture2D(colorTexture, position.xy / vec2(iters, steps)).rgb;
+        } else {
+            vColor = vec3(1., 1., 1.);
+        }
     }
 
 </script>
