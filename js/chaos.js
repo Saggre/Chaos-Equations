@@ -314,6 +314,10 @@ function getNextDeltaTime() {
         return deltaMaximum;
     }
 
+    if (isNaN(rollingDelta)) {
+        rollingDelta = deltaPerStep;
+    }
+
     return rollingDelta;
 }
 
