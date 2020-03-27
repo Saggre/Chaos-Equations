@@ -40,16 +40,16 @@
                 break;
             }
 
-            vec3 ma = pos * pos;
-            vec3 mb = pos.xxy * pos.yzz;
+            vec3 xxyytt = pos * pos; // x*x, y*y, t*t combinations
+            vec3 xyxzyz = pos.xxy * pos.yzz; // x*y, x*z, y*z combinations
 
             pos.xy = vec2(
-            ma.x * px[0][0] + ma.y * px[1][0] + ma.z * px[2][0] + mb.x * px[0][1] + mb.y * px[1][1] + mb.z * px[2][1] + pos.x * px[0][2] + pos.y * px[1][2] + pos.z * px[2][2],
-            ma.x * py[0][0] + ma.y * py[1][0] + ma.z * py[2][0] + mb.x * py[0][1] + mb.y * py[1][1] + mb.z * py[2][1] + pos.x * py[0][2] + pos.y * py[1][2] + pos.z * py[2][2]
+            xxyytt.x * px[0][0] + xxyytt.y * px[1][0] + xxyytt.z * px[2][0] + xyxzyz.x * px[0][1] + xyxzyz.y * px[1][1] + xyxzyz.z * px[2][1] + pos.x * px[0][2] + pos.y * px[1][2] + pos.z * px[2][2],
+            xxyytt.x * py[0][0] + xxyytt.y * py[1][0] + xxyytt.z * py[2][0] + xyxzyz.x * py[0][1] + xyxzyz.y * py[1][1] + xyxzyz.z * py[2][1] + pos.x * py[0][2] + pos.y * py[1][2] + pos.z * py[2][2]
             );
         }
 
-        gl_PointSize = 1.5 * pixelRatio;
+        gl_PointSize = 1.8 * pixelRatio;
         vec4 modelViewPosition = modelViewMatrix * vec4(pos.xy, 0., 1.);
         gl_Position = projectionMatrix * modelViewPosition;
 

@@ -1,7 +1,7 @@
 "use strict";
 
 // Debug variables
-const debug = true;
+const debug = false;
 const stats = new Stats();
 
 let i;
@@ -51,6 +51,19 @@ const CHAR_TO_N = {
     M: 13, Z: 26,
 };
 
+// Gets params from url or generates random ones if none are provided
+function getInitialParams() {
+    try {
+        // Get code hash from url and check its format
+        const hash = window.location.hash.substr(1);
+        if (RegExp('[A-Za-z_]{6}').test(hash)) {
+            return stringToParams(hash);
+        }
+    } catch (err) {
+    }
+
+    return randParams(params);
+}
 
 // Points used to debug
 let debugVertexArray = new Float32Array(iters * 3);
@@ -73,7 +86,7 @@ function init() {
     }
 
     initVertices();
-    randParams(params);
+    setParams(getInitialParams());
 
     camera = new THREE.OrthographicCamera(screenWorldUnits.x / -2, screenWorldUnits.x / 2, screenWorldUnits.y / 2, screenWorldUnits.y / -2, 1, 1000);
     camera.position.z = 10;
@@ -114,7 +127,7 @@ function init() {
     scene.add(computePoints);
 
     if (debug) {
-        let pointsMaterial = new THREE.PointsMaterial({color: 0xff0000, size: 2.0});
+        let pointsMaterial = new THREE.PointsMaterial({color: 0xff0000, size: 2.5});
         let debugPoints = new THREE.Points(debugBufferGeometry, pointsMaterial);
         scene.add(debugPoints);
     }
@@ -141,25 +154,42 @@ function initVertices() {
 }
 
 /**
- * Generate random parameters for chaos
+ * Function through which params must be set
+ * Updates UI, url etc.
+ * @param p The parameters to set
  */
-function randParams(params) {
-    for (i = 0; i < 18; i++) {
-        let r = chance.integer({min: 0, max: 3});
-        if (r === 0) {
-            params[i] = 1.0;
-        } else if (r === 1) {
-            params[i] = -1.0;
-        } else {
-            params[i] = 0.0;
-        }
-    }
+function setParams(p) {
+    params = p;
 
     if (debug) {
         console.log("Params set to: " + params);
     }
 
+    // Update UI
     createUI(params);
+
+    // Update Url with new code
+    window.location.hash = paramsToString(params);
+}
+
+/**
+ * Generate random parameters for chaos
+ */
+function randParams() {
+    let p = Array();
+
+    for (i = 0; i < 18; i++) {
+        let r = chance.integer({min: 0, max: 3});
+        if (r === 0) {
+            p[i] = 1.0;
+        } else if (r === 1) {
+            p[i] = -1.0;
+        } else {
+            p[i] = 0.0;
+        }
+    }
+
+    return p;
 }
 
 /**
@@ -205,9 +235,10 @@ function paramsToString(params) {
 /**
  * Decodes and sets params from a string
  * @param str
- * @param params
  */
-function stringToParams(str, params) {
+function stringToParams(str) {
+    let params = Array();
+
     const ustr = str.toUpperCase();
     for (i = 0; i < 18 / 3; i++) {
         let a = 0;
@@ -221,6 +252,8 @@ function stringToParams(str, params) {
         a /= 3;
         params[i * 3] = Math.floor((a % 3) - 1.0);
     }
+
+    return params;
 }
 
 function floatEquals(a, b) {
@@ -282,6 +315,7 @@ function getNextDeltaTime() {
     let delta = deltaPerStep;
     rollingDelta = rollingDelta * 0.99 + delta * 0.01;
 
+    // For all points in the series
     for (i = 0; i < iters; i++) {
 
         let xx = x * x;
@@ -333,8 +367,9 @@ function getNextDeltaTime() {
  */
 function updateShader() {
 
+    // Reset animation
     if (t > tEnd) {
-        randParams(params);
+        setParams(randParams());
         t = tStart;
     }
 
@@ -360,6 +395,7 @@ function updateShader() {
 
     uniforms.deltaTime.value = deltaTime;
     uniforms.cpuTime.value = t;
+
     t += deltaTime * steps;
 
 }
