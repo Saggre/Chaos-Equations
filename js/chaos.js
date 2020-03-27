@@ -1,10 +1,10 @@
 "use strict";
 
 // Debug variables
-const debug = false;
+const debug = true;
 const stats = new Stats();
 
-var i;
+let i;
 
 // Time variables and constants
 const deltaMaximum = 1e-3;
@@ -52,14 +52,14 @@ const CHAR_TO_N = {
 };
 
 
-// Debug points array
-var cpuVertexArray = new Float32Array(iters * 3);
-var cpuBufferGeometry = new THREE.BufferGeometry();
-cpuBufferGeometry.addAttribute('position', new THREE.BufferAttribute(cpuVertexArray, 3));
+// Points used to debug
+let debugVertexArray = new Float32Array(iters * 3);
+let debugBufferGeometry = new THREE.BufferGeometry();
+debugBufferGeometry.addAttribute('position', new THREE.BufferAttribute(debugVertexArray, 3));
 
-// GPU points array
-var computeVertexArray = new Float32Array(iters * steps * 3);
-var computeBufferGeometry = new THREE.BufferGeometry();
+// Actual points used in rendering
+let computeVertexArray = new Float32Array(iters * steps * 3);
+let computeBufferGeometry = new THREE.BufferGeometry();
 computeBufferGeometry.addAttribute('position', new THREE.BufferAttribute(computeVertexArray, 3));
 
 /**
@@ -114,8 +114,8 @@ function init() {
     scene.add(computePoints);
 
     if (debug) {
-        var pointsMaterial = new THREE.PointsMaterial({color: 0xff0000, size: 2.0});
-        var debugPoints = new THREE.Points(cpuBufferGeometry, pointsMaterial);
+        let pointsMaterial = new THREE.PointsMaterial({color: 0xff0000, size: 2.0});
+        let debugPoints = new THREE.Points(debugBufferGeometry, pointsMaterial);
         scene.add(debugPoints);
     }
 
@@ -126,8 +126,8 @@ function init() {
  * Set vertex positions on pixel coordinates
  */
 function initVertices() {
-    var rowCounter = 0;
-    var colCounter = 0;
+    let rowCounter = 0;
+    let colCounter = 0;
     for (i = 2; i < computeVertexArray.length; i += 3) {
         computeVertexArray[i - 2] = rowCounter;// / iters;
         computeVertexArray[i - 1] = colCounter;// / steps;
@@ -145,7 +145,7 @@ function initVertices() {
  */
 function randParams(params) {
     for (i = 0; i < 18; i++) {
-        var r = chance.integer({min: 0, max: 3});
+        let r = chance.integer({min: 0, max: 3});
         if (r === 0) {
             params[i] = 1.0;
         } else if (r === 1) {
@@ -162,6 +162,10 @@ function randParams(params) {
     createUI(params);
 }
 
+/**
+ * Prepares DOM UI elements
+ * @param params
+ */
 function createUI(params) {
     document.getElementById("chaos-ui--x-equation").textContent = "x' = " + makeEquationStr(params.slice(0, 9));
     document.getElementById("chaos-ui--y-equation").textContent = "y' = " + makeEquationStr(params.slice(9, 18));
@@ -169,6 +173,9 @@ function createUI(params) {
     document.getElementById("chaos-ui--time").textContent = "t = " + t.toFixed(6);
 }
 
+/**
+ * Updates DOM UI elements
+ */
 function updateUI() {
     document.getElementById("chaos-ui--time").textContent = "t = " + t.toFixed(6);
 }
@@ -180,9 +187,9 @@ function updateUI() {
  */
 function paramsToString(params) {
     const base27 = "_ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    var a = 0;
-    var n = 0;
-    var result = "";
+    let a = 0;
+    let n = 0;
+    let result = "";
     for (i = 0; i < 18; i++) {
         a = a * 3 + Math.floor(params[i]) + 1;
         n += 1;
@@ -203,7 +210,7 @@ function paramsToString(params) {
 function stringToParams(str, params) {
     const ustr = str.toUpperCase();
     for (i = 0; i < 18 / 3; i++) {
-        var a = 0;
+        let a = 0;
         const c = (i < ustr.length ? ustr.charAt(i) : '_');
         if (CHAR_TO_N[c] >= CHAR_TO_N.A && CHAR_TO_N[c] <= CHAR_TO_N.Z) {
             a = (CHAR_TO_N[c] - CHAR_TO_N.A) + 1;
@@ -226,7 +233,7 @@ function makeEquationStr(params) {
      * @return {string}
      */
     function SIGN_OR_SKIP(param, mathVariable, isFirst = false) {
-        var string = "";
+        let string = "";
 
         if (!floatEquals(param, 0.0)) {
             if (isFirst) {
@@ -246,7 +253,7 @@ function makeEquationStr(params) {
         return string;
     }
 
-    var equationStr = "";
+    let equationStr = "";
 
     equationStr += SIGN_OR_SKIP(params[0], "x\u00b2", true);
     equationStr += SIGN_OR_SKIP(params[1], "y\u00b2");
@@ -268,23 +275,23 @@ let lx = new Array(iters);
  * Only do the first iterations on the CPU, and check delta
  */
 function getNextDeltaTime() {
-    var isOffScreen = true;
+    let isOffScreen = true;
     let x = t;
     let y = t;
 
-    var delta = deltaPerStep;
+    let delta = deltaPerStep;
     rollingDelta = rollingDelta * 0.99 + delta * 0.01;
 
     for (i = 0; i < iters; i++) {
 
-        var xx = x * x;
-        var yy = y * y;
-        var tt = t * t;
-        var xy = x * y;
-        var xt = x * t;
-        var yt = y * t;
-        var nx = xx * params[0] + yy * params[1] + tt * params[2] + xy * params[3] + xt * params[4] + yt * params[5] + x * params[6] + y * params[7] + t * params[8];
-        var ny = xx * params[9] + yy * params[10] + tt * params[11] + xy * params[12] + xt * params[13] + yt * params[14] + x * params[15] + y * params[16] + t * params[17];
+        let xx = x * x;
+        let yy = y * y;
+        let tt = t * t;
+        let xy = x * y;
+        let xt = x * t;
+        let yt = y * t;
+        let nx = xx * params[0] + yy * params[1] + tt * params[2] + xy * params[3] + xt * params[4] + yt * params[5] + x * params[6] + y * params[7] + t * params[8];
+        let ny = xx * params[9] + yy * params[10] + tt * params[11] + xy * params[12] + xt * params[13] + yt * params[14] + x * params[15] + y * params[16] + t * params[17];
 
         nx = clamp(nx, -10000, 10000);
         ny = clamp(ny, -10000, 10000);
@@ -293,8 +300,8 @@ function getNextDeltaTime() {
         x = nx;
 
         if (debug) {
-            cpuVertexArray[i * 3] = nx + 0.1;
-            cpuVertexArray[i * 3 + 1] = ny;
+            debugVertexArray[i * 3] = nx + 0.1;
+            debugVertexArray[i * 3 + 1] = ny;
         }
 
         if (pointIsInViewport(nx, ny)) {
@@ -331,8 +338,8 @@ function updateShader() {
         t = tStart;
     }
 
-    var paramsX = new THREE.Matrix3();
-    var paramsY = new THREE.Matrix3();
+    let paramsX = new THREE.Matrix3();
+    let paramsY = new THREE.Matrix3();
 
     paramsX.set(
         params[0], params[1], params[2],
@@ -349,7 +356,7 @@ function updateShader() {
     uniforms.px.value = paramsX;
     uniforms.py.value = paramsY;
 
-    var deltaTime = getNextDeltaTime();
+    let deltaTime = getNextDeltaTime();
 
     uniforms.deltaTime.value = deltaTime;
     uniforms.cpuTime.value = t;
@@ -364,8 +371,8 @@ function updateShader() {
  * @returns {boolean}
  */
 function pointIsInViewport(x, y) {
-    var sx = screenWorldUnits.x * 0.5;
-    var sy = screenWorldUnits.y * 0.5;
+    let sx = screenWorldUnits.x * 0.5;
+    let sy = screenWorldUnits.y * 0.5;
     return x > -sx && x < sx && y > -sy && y < sy;
 }
 
@@ -374,19 +381,19 @@ function pointIsInViewport(x, y) {
  * @returns {DataTexture}
  */
 function createColorTexture() {
-    var data = new Uint8Array(steps * iters * 3);
+    let data = new Uint8Array(steps * iters * 3);
 
-    for (var i = 0; i < (steps * iters); i++) {
-        var color = getNextColor(i);
+    for (let i = 0; i < (steps * iters); i++) {
+        let color = getNextColor(i);
 
-        var stride = i * 3;
+        let stride = i * 3;
 
         data[stride] = color.r * 255;
         data[stride + 1] = color.g * 255;
         data[stride + 2] = color.b * 255;
     }
 
-    var texture = new THREE.DataTexture(data, iters, steps, THREE.RGBFormat);
+    let texture = new THREE.DataTexture(data, iters, steps, THREE.RGBFormat);
     texture.needsUpdate = true;
 
     return texture;
@@ -394,13 +401,13 @@ function createColorTexture() {
 
 /**
  * Returns bright colors
- * @param seed
  * @returns {Color}
+ * @param pos
  */
 function getNextColor(pos) {
-    var r = Math.min(255, 90 + (pos * 11909) % 256);
-    var g = Math.min(255, 90 + (pos * 52973) % 256);
-    var b = Math.min(255, 90 + (pos * 44111) % 256);
+    let r = Math.min(255, 90 + (pos * 11909) % 256);
+    let g = Math.min(255, 90 + (pos * 52973) % 256);
+    let b = Math.min(255, 90 + (pos * 44111) % 256);
     return new THREE.Color(r / 255.0, g / 255.0, b / 255.0);
 }
 
@@ -414,8 +421,8 @@ function animate() {
     updateShader();
 
     if (debug) {
-        cpuBufferGeometry.attributes.position.needsUpdate = true;
-        cpuBufferGeometry.computeBoundingSphere();
+        debugBufferGeometry.attributes.position.needsUpdate = true;
+        debugBufferGeometry.computeBoundingSphere();
     }
 
     renderer.render(scene, camera);
@@ -460,6 +467,7 @@ function dot(a, b) {
 function clamp(num, min, max) {
     return num <= min ? min : num >= max ? max : num;
 }
+
 
 init();
 animate();
