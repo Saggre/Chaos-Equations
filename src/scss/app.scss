@@ -1,17 +1,4 @@
-@import "variables/media";
-
-@import "mixin/media";
-
-@import "util/grid";
-
-@import "lib/normalize";
-
-@import "modifier/margin";
-
-@import 'base/base';
-@import 'base/fonts';
-
-@import 'module/cat';
-
-
-
+body {
+  padding: 0;
+  margin: 0;
+}

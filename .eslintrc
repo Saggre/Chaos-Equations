@@ -42,6 +42,7 @@
       "never"
     ],
     "import/no-extraneous-dependencies": "off",
-    "no-unused-vars": "off"
+    "no-unused-vars": "off",
+    "object-curly-spacing": "off"
   }
 }
