@@ -25,6 +25,7 @@
     "Edge 16"
   ],
   "dependencies": {
+    "base27": "^1.0.1",
     "chance": "^1.1.7",
     "dat.gui": "^0.7.7",
     "gpucomputationrender-three": "^2.0.0",

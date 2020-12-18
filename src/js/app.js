@@ -1,17 +1,19 @@
 import * as THREE from 'three';
 import {GPUComputationRenderer} from 'gpucomputationrender-three';
 
-import Chance from 'chance';
 import * as Stats from 'stats.js';
 
 import pointsFrag from '../shaders/points.frag';
 import pointsVert from '../shaders/points.vert';
 
-const debug = false;
-const chance = new Chance();
+import Parameters from './module/parameters';
+
 const stats = new Stats();
 
 const rendering = {};
+const chaos = {
+    parameters: new Parameters()
+};
 
 /**
  * Set up the rendering environment
