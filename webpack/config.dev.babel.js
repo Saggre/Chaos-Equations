@@ -13,8 +13,8 @@ const getEntries = () => {
         './src/scss/app.scss'
     ];
 
-    htmlFileNames.forEach(filename => {
-        entries.push(`./src/html/${filename}`);
+    htmlFileNames.forEach((filename) => {
+        entries.push('./src/html/' + filename);
     });
 
     return entries;
@@ -27,13 +27,13 @@ const getPlugins = () => {
             clearConsole: true,
         })
     ];
-    htmlFileNames.forEach(filename => {
-        const splitted = filename.split('.');
-        if (splitted[1] === 'html') {
+    htmlFileNames.forEach((filename) => {
+        const split = filename.split('.');
+        if (split[1] === 'html') {
             plugins.push(
                 new HtmlWebpackPlugin({
-                    template: `./src/html/${filename}`,
-                    filename: `./${filename}`
+                    template: './src/html/' + filename,
+                    filename: './' + filename
                 }),
             );
         }
@@ -55,7 +55,7 @@ module.exports = {
         inline: true,
         quiet: true,
         historyApiFallback: true,
-        before: function (app) {
+        before(app) {
             app.use('/assets', express.static('./src/assets'));
             app.use('/img', express.static('./src/assets/img'));
         }
@@ -64,6 +64,18 @@ module.exports = {
     devtool: 'inline-source-map',
     module: {
         rules: [
+            {
+                test: /\.(frag|vert|glsl)$/,
+                exclude: /node_modules/,
+                use: [
+                    {
+                        loader: 'glsl-shader-loader',
+                        options: {
+                            root: './src/shaders'
+                        }
+                    }
+                ]
+            },
             {
                 test: /\.(html)$/,
                 loader: path.resolve(__dirname, 'loader/html-loader.js'),

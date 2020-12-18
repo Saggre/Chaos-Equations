@@ -1,6 +1,9 @@
-import $ from 'jquery';
+import * as Three from 'three';
+import Chance from 'chance';
+import * as Stats from 'stats.js';
+import pointsFrag from '../shaders/points.frag';
+import pointsVert from '../shaders/points.vert';
 
-import './module/cat';
-
-window.$ = $;
-window.jQuery = $;
+const debug = false;
+const chance = new Chance();
+const stats = new Stats();

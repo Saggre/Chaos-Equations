@@ -1,20 +1,26 @@
-.cat {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+body {
+    padding: 0;
+    margin: 0;
+}
 
-    &__photo {
-        width: 100%;
-        height: 300px;
-        background-image: url('../img/cat.jpg');
-        background-position: center;
-        background-size: contain;
-        background-repeat: no-repeat;
-    }
+.chaos-ui {
+    z-index: 9999;
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 10px;
+}
 
-    &__title {
-        font-size: 20px;
-        text-align: center;
-    }
+h1, h2, h3, h4, h5 {
+    font-family: 'Montserrat', sans-serif;
+}
+
+.chaos-ui--text, p {
+    font-family: 'Karla', sans-serif;
+}
+
+.chaos-ui--text {
+    color: white;
+    display: block;
+    font-size: 24px;
 }

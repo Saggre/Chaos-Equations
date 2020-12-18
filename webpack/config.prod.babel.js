@@ -13,7 +13,7 @@ const getEntries = () => {
         './src/scss/app.scss'
     ];
 
-    htmlFileNames.forEach(filename => {
+    htmlFileNames.forEach((filename) => {
         entries.push(`./src/html/${filename}`);
     });
 
@@ -36,14 +36,14 @@ const getPlugins = () => {
             allChunks: true
         })
     ];
-    htmlFileNames.forEach(filename => {
+    htmlFileNames.forEach((filename) => {
         if (filename.substr(0, 1) !== '_') {
-            const splitted = filename.split('.');
-            if (splitted[1] === 'html') {
+            const split = filename.split('.');
+            if (split[1] === 'html') {
                 plugins.push(
                     new HtmlWebpackPlugin({
-                        template: `./src/html/${filename}`,
-                        filename: `./${filename}`
+                        template: './src/html/' + filename,
+                        filename: './' + filename
                     }),
                 );
             }
@@ -61,6 +61,18 @@ module.exports = {
     plugins: getPlugins(),
     module: {
         rules: [
+            {
+                test: /\.(frag|vert|glsl)$/,
+                exclude: /node_modules/,
+                use: [
+                    {
+                        loader: 'glsl-shader-loader',
+                        options: {
+                            root: './src/shaders'
+                        }
+                    }
+                ]
+            },
             {
                 test: /\.(html)$/,
                 loader: path.resolve(__dirname, 'loader/html-loader.js'),
