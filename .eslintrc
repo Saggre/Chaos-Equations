@@ -31,12 +31,7 @@
       "error",
       4
     ],
-    "no-plusplus": [
-      "error",
-      {
-        "allowForLoopAfterthoughts": true
-      }
-    ],
+    "no-plusplus": "off",
     "no-restricted-syntax": [
       "error",
       "never"
