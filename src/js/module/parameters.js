@@ -3,18 +3,13 @@ import * as THREE from 'three';
 class Parameters {
     constructor(renderingPtr) {
         this.rendering = renderingPtr;
-        this.viewport = {
-            width: window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth,
-            height: window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight
-        };
-        this.screenWorldUnits = new THREE.Vector2(5.0, 5.0 * this.viewport.height / this.viewport.width);
         this.historyPoints = new Array(this.rendering.steps).fill({x: 0.0, y: 0.0});
     }
 
     isPointInViewport(point) {
         // TODO test
-        const sx = this.screenWorldUnits.x * 0.5;
-        const sy = this.screenWorldUnits.y * 0.5;
+        const sx = this.rendering.screenWorldUnits.x * 0.5;
+        const sy = this.rendering.screenWorldUnits.y * 0.5;
         return point.x > -sx && point.x < sx && point.y > -sy && point.y < sy;
     }
 

@@ -13,6 +13,16 @@ class Rendering {
         this.steps = steps;
         this.trail = trail;
 
+        this.viewport = {
+            width: window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth,
+            height: window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight
+        };
+
+        this.screenWorldUnits = {
+            x: 1.0,
+            y: this.viewport.height / this.viewport.width
+        };
+
         this.setupEnvironment();
 
         this.encodedParameters = new ParameterEncoding();
@@ -46,7 +56,7 @@ class Rendering {
         });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.camera = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 0, 1);
+        this.camera = new THREE.OrthographicCamera(-0.5 * this.screenWorldUnits.x, 0.5 * this.screenWorldUnits.x, 0.5 * this.screenWorldUnits.y, -0.5 * this.screenWorldUnits.y, 0, 1);
 
         const geometry = new THREE.PlaneBufferGeometry(2, 2);
         const material = new THREE.MeshBasicMaterial({color: 0x000000, side: THREE.DoubleSide});
