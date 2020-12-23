@@ -1,24 +1,46 @@
 import Chance from 'chance';
 import {sv2bts, bts2sv} from 'base27';
 
+const parameterCount = 18;
+
 /**
  * Try to load parameters from url, and get random ones if none are set
  * @returns {ParameterEncoding}
  * @constructor
  */
 class ParameterEncoding {
-    constructor(number = 18) {
-        if (number % 3 !== 0) {
+    constructor() {
+        if (parameterCount % 3 !== 0) {
             throw new Error('Parameter count must be a multiple of three');
         }
 
-        this.number = number;
+        this.valueChangedListeners = [];
 
         try {
-            this.values = ParameterEncoding.getUrlParameters(this.number);
+            this.setValues(ParameterEncoding.getUrlParameters());
         } catch (e) {
-            this.values = ParameterEncoding.getRandomParameters(this.number);
+            this.setValues(ParameterEncoding.getRandomParameters());
         }
+    }
+
+    /**
+     * Set parameters and call listeners
+     * @param values
+     */
+    setValues(values) {
+        this.values = values;
+        window.location.hash = this.toString();
+        this.valueChangedListeners.forEach((listener) => {
+            listener(this);
+        });
+    }
+
+    /**
+     * Add a value change listener
+     * @param callback
+     */
+    onValueChanged(callback) {
+        this.valueChangedListeners.push(callback);
     }
 
     /**
@@ -33,7 +55,20 @@ class ParameterEncoding {
      * Refresh parameters
      */
     randomize() {
-        this.values = ParameterEncoding.getRandomParameters(this.number);
+        this.setValues(ParameterEncoding.getRandomParameters());
+    }
+
+    /**
+     * Tries to get equation parameters string
+     */
+    setParametersFromString(parameterString) {
+        try {
+            this.setValues(ParameterEncoding.getParametersFromString(
+                ParameterEncoding.sanitizeParameterString(parameterString)
+            ));
+        } catch (e) {
+            this.setValues(ParameterEncoding.getRandomParameters());
+        }
     }
 
     /**
@@ -71,14 +106,13 @@ class ParameterEncoding {
 
     /**
      * Generate random equation parameters
-     * @param {number} number Number of parameters to generate
      * @returns {[]}
      */
-    static getRandomParameters(number) {
+    static getRandomParameters() {
         const parameters = [];
         const chance = new Chance();
 
-        for (let i = 0; i < number; i++) {
+        for (let i = 0; i < parameterCount; i++) {
             parameters[i] = chance.integer({min: -1, max: 1});
         }
 
@@ -87,17 +121,30 @@ class ParameterEncoding {
 
     /**
      * Tries to get equation parameters from url
-     * @param {number} number Number of parameters to generate
      * @returns {[]}
      */
-    static getUrlParameters(number) {
-        const patternLength = number / 3;
-        const string = window.location.hash.substr(1);
-        if (RegExp('[A-Za-z0]{' + patternLength + '}').test(string)) {
-            return ParameterEncoding.getParametersFromString(string);
+    static getUrlParameters() {
+        try {
+            const parameterString = ParameterEncoding.sanitizeParameterString(window.location.hash.substring(1));
+            return ParameterEncoding.getParametersFromString(parameterString);
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    /**
+     *
+     * @param parameterString
+     */
+    static sanitizeParameterString(parameterString) {
+        const patternLength = parameterCount / 3;
+        if (new RegExp('^[A-Za-z0]+$').test(parameterString)) {
+            if (parameterString.length >= patternLength) {
+                return parameterString.substring(0, patternLength).toUpperCase();
+            }
         }
 
-        throw new Error('No valid url parameters');
+        throw new Error('Parameter string not valid');
     }
 }
 

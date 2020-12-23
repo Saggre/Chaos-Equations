@@ -6,11 +6,17 @@ import ParameterEncoding from './parameterEncoding';
 import Parameters from './parameters';
 import pointsVert from '../../shaders/points.vert';
 import pointsFrag from '../../shaders/points.frag';
+import Controls from './controls';
 
 class Rendering {
     constructor(steps = 512, trail = 512) {
+        this.steps = steps;
+        this.trail = trail;
+
         this.setupEnvironment();
+
         this.encodedParameters = new ParameterEncoding();
+        this.controls = new Controls(this.encodedParameters);
         this.parameters = new Parameters(this);
 
         const vertices = new Float32Array(steps * trail * 3);
@@ -18,8 +24,6 @@ class Rendering {
         geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
 
         this.timeManager = new Time();
-        this.steps = steps;
-        this.trail = trail;
 
         const shaderMaterial = new THREE.ShaderMaterial({
             uniforms: {},
@@ -42,7 +46,7 @@ class Rendering {
         });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        this.camera = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 0, 1);
 
         const geometry = new THREE.PlaneBufferGeometry(2, 2);
         const material = new THREE.MeshBasicMaterial({color: 0x000000, side: THREE.DoubleSide});
