@@ -15,6 +15,7 @@ class Cassette {
         this.parameters = parameters;
         this.start = start;
         this.end = end;
+        this.used = false;
     }
 }
 

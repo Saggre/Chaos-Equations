@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import {GPUComputationRenderer} from 'gpucomputationrender-three';
 
-import Time from './time';
-import Parameters from './parameterEncoding';
+import CassettePlayer from './cassettePlayer';
+import Parameters from './parameters';
 import Chaos from './chaos';
 import pointsVert from '../../shaders/points.vert';
 import pointsFrag from '../../shaders/points.frag';
@@ -30,21 +30,16 @@ class Rendering {
 
         this.setupEnvironment();
 
-        this.timeManager = new Time();
-        this.encodedParameters = new Parameters();
-        this.controls = new Controls(this.encodedParameters, this.timeManager);
-        this.chaos = new Chaos(this);
+        this.cassettePlayer = new CassettePlayer();
+        this.controls = new Controls(this.cassettePlayer);
+        this.chaos = new Chaos(this, this.cassettePlayer);
 
         const vertices = new Float32Array(steps * trail * 3);
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
 
-        this.encodedParameters.onValueChanged(() => {
-            this.timeManager.restart();
-        });
-
-        this.timeManager.onTimeEnded(() => {
-            this.encodedParameters.randomize(); // This will call encodedParameters.onValueChanged eventually
+        this.cassettePlayer.onTimeEnded(() => {
+            this.cassettePlayer.setRandomCassette();
         });
 
         const shaderMaterial = new THREE.ShaderMaterial({

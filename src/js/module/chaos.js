@@ -1,6 +1,7 @@
 class Chaos {
-    constructor(rendering) {
+    constructor(rendering, cassettePlayer) {
         this.rendering = rendering;
+        this.cassettePlayer = cassettePlayer;
         this.historyPoints = new Array(this.rendering.steps).fill({x: 0.0, y: 0.0});
     }
 
@@ -20,9 +21,9 @@ class Chaos {
      * diagonally in xy space from (timeStart, timeStart) to (timeEnd, timeEnd) as time advances
      */
     apply() {
-        this.rendering.timeManager.smoothRollingDelta();
+        this.cassettePlayer.smoothRollingDelta();
 
-        const params = this.rendering.encodedParameters.values;
+        const params = this.cassettePlayer.currentCassette.parameters;
         const positions = this.rendering.points.geometry.attributes.position.array;
         let index = 0;
         for (let i = 0; i < this.rendering.trail; i++) {
@@ -30,11 +31,11 @@ class Chaos {
 
             // Start sequence from (t, t)
             let point = {
-                x: this.rendering.timeManager.time,
-                y: this.rendering.timeManager.time
+                x: this.cassettePlayer.time,
+                y: this.cassettePlayer.time
             };
 
-            const t = this.rendering.timeManager.time;
+            const t = this.cassettePlayer.time;
 
             for (let j = 0; j < this.rendering.steps; j++) {
                 const xx = point.x * point.x;
@@ -63,7 +64,7 @@ class Chaos {
                     const dy = this.historyPoints[j].y - point.y;
 
                     const distance = 500.0 * Math.sqrt(dx * dx + dy * dy);
-                    this.rendering.timeManager.updateRollingDelta(distance);
+                    this.cassettePlayer.updateRollingDelta(distance);
                     isOffScreen = false;
                 }
 
@@ -77,14 +78,14 @@ class Chaos {
 
             // Update the t variable
             if (isOffScreen) {
-                this.rendering.timeManager.advance(0.01); // Lightspeed
+                this.cassettePlayer.advance(0.01); // Lightspeed
             } else {
-                this.rendering.timeManager.advance();
+                this.cassettePlayer.advance();
             }
         }
 
         this.rendering.points.geometry.attributes.position.needsUpdate = true;
-        this.rendering.timeManager.maybeRestart();
+        this.cassettePlayer.maybeRestart();
     }
 }
 
