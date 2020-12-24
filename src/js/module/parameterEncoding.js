@@ -14,7 +14,9 @@ class ParameterEncoding {
             throw new Error('Parameter count must be a multiple of three');
         }
 
-        this.valueChangedListeners = [];
+        this.listeners = {
+            valueChanged: []
+        };
 
         try {
             this.setValues(ParameterEncoding.getUrlParameters());
@@ -30,8 +32,8 @@ class ParameterEncoding {
     setValues(values) {
         this.values = values;
         window.location.hash = this.toString();
-        this.valueChangedListeners.forEach((listener) => {
-            listener(this);
+        this.listeners.valueChanged.forEach((callback) => {
+            callback(this);
         });
     }
 
@@ -40,7 +42,7 @@ class ParameterEncoding {
      * @param callback
      */
     onValueChanged(callback) {
-        this.valueChangedListeners.push(callback);
+        this.listeners.valueChanged.push(callback);
     }
 
     /**
@@ -49,6 +51,34 @@ class ParameterEncoding {
      */
     toString() {
         return ParameterEncoding.getStringFromParameters(this.values);
+    }
+
+    /**
+     * Transform params into two equation strings
+     * @returns {{x: string, y: string}}
+     */
+    toEquations() {
+        const equations = ['', ''];
+        const mathSymbols = ['x\u00b2', 'y\u00b2', 't\u00b2', 'xy', 'xt', 'yt', 'x', 'y', 't'];
+
+        for (let i = 0; i < 2; i++) {
+            for (let j = 0; j < this.values.length / 2; j++) {
+                if (this.values[this.values.length / 2 * i + j] !== 0) {
+                    if (this.values[j] < 0) {
+                        equations[i] += ' - ';
+                    } else {
+                        equations[i] += ' + ';
+                    }
+
+                    equations[i] += mathSymbols[j];
+                }
+            }
+        }
+
+        return {
+            x: equations[0],
+            y: equations[1]
+        };
     }
 
     /**

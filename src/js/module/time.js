@@ -2,14 +2,18 @@ const deltaMaximum = 1e-3;
 const deltaMinimum = 1e-7;
 const deltaPerStep = 1e-5;
 const timeStart = -3.0;
-const timeEnd = 3.0; // TODO replace with time window
+const timeEnd = 3.0;
 const speedMultiplier = 1.0;
 
 class Time {
     constructor() {
         this.rollingDelta = deltaPerStep;
-        this.time = 0.0;
         this.delta = deltaPerStep * speedMultiplier;
+        this.listeners = {
+            timeEnded: [],
+            restarted: []
+        };
+        this.restart();
     }
 
     /**
@@ -17,8 +21,34 @@ class Time {
      */
     maybeRestart() {
         if (this.time > timeEnd) {
-            this.time = timeStart;
+            this.restart();
+            this.listeners.timeEnded.forEach((callback) => {
+                callback(this);
+            });
         }
+    }
+
+    restart() {
+        this.time = timeStart;
+        this.listeners.restarted.forEach((callback) => {
+            callback(this);
+        });
+    }
+
+    /**
+     * Add a restart listener
+     * @param callback
+     */
+    onRestarted(callback) {
+        this.listeners.restarted.push(callback);
+    }
+
+    /**
+     * Add a time ended listener
+     * @param callback
+     */
+    onTimeEnded(callback) {
+        this.listeners.timeEnded.push(callback);
     }
 
     /**

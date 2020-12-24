@@ -203,18 +203,17 @@ function randParams() {
  * @param params
  */
 function createUI(params) {
-    /*document.getElementById("chaos-ui--x-equation").textContent = "x' = " + makeEquationStr(params.slice(0, 9));
+    document.getElementById("chaos-ui--x-equation").textContent = "x' = " + makeEquationStr(params.slice(0, 9));
     document.getElementById("chaos-ui--y-equation").textContent = "y' = " + makeEquationStr(params.slice(9, 18));
     document.getElementById("chaos-ui--code").textContent = "Code: " + paramsToString(params);
-    document.getElementById("chaos-ui--time").textContent = "t = " + t.toFixed(6);*/
-    // TODO restore UI
+    document.getElementById("chaos-ui--time").textContent = "t = " + t.toFixed(6);
 }
 
 /**
  * Updates DOM UI elements
  */
 function updateUI() {
-    //document.getElementById("chaos-ui--time").textContent = "t = " + t.toFixed(6);
+    document.getElementById("chaos-ui--time").textContent = "t = " + t.toFixed(6);
 }
 
 /**

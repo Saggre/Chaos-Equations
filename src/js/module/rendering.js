@@ -9,6 +9,11 @@ import pointsFrag from '../../shaders/points.frag';
 import Controls from './controls';
 
 class Rendering {
+    /**
+     * Constructor
+     * @param steps The number of steps to take for the sequence
+     * @param trail Trail iterations to draw. Changing trail length also changes animation speed
+     */
     constructor(steps = 512, trail = 512) {
         this.steps = steps;
         this.trail = trail;
@@ -35,6 +40,14 @@ class Rendering {
 
         this.timeManager = new Time();
 
+        this.encodedParameters.onValueChanged(() => {
+            this.timeManager.restart();
+        });
+
+        this.timeManager.onTimeEnded(() => {
+            this.encodedParameters.randomize(); // This will call encodedParameters.onValueChanged eventually
+        });
+
         const shaderMaterial = new THREE.ShaderMaterial({
             uniforms: {},
             vertexShader: pointsVert,
@@ -56,7 +69,13 @@ class Rendering {
         });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.camera = new THREE.OrthographicCamera(-0.5 * this.screenWorldUnits.x, 0.5 * this.screenWorldUnits.x, 0.5 * this.screenWorldUnits.y, -0.5 * this.screenWorldUnits.y, 0, 1);
+        this.camera = new THREE.OrthographicCamera(
+            -0.5 * this.screenWorldUnits.x,
+            0.5 * this.screenWorldUnits.x,
+            0.5 * this.screenWorldUnits.y,
+            -0.5 * this.screenWorldUnits.y,
+            0, 1
+        );
 
         const geometry = new THREE.PlaneBufferGeometry(2, 2);
         const material = new THREE.MeshBasicMaterial({color: 0x000000, side: THREE.DoubleSide});
