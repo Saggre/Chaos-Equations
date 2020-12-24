@@ -34,8 +34,9 @@ class CassettePlayer {
      */
     maybeRestart() {
         if (this.time > this.currentCassette.end) {
+            this.setNextCassette();
             this.listeners.timeEnded.forEach((callback) => {
-                callback(this);
+                callback(this); // Can be used to override cassette
             });
             this.restart();
         }

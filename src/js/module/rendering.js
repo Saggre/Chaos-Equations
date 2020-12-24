@@ -38,10 +38,6 @@ class Rendering {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
 
-        this.cassettePlayer.onTimeEnded(() => {
-            this.cassettePlayer.setRandomCassette();
-        });
-
         const shaderMaterial = new THREE.ShaderMaterial({
             uniforms: {
                 colorTexture: {

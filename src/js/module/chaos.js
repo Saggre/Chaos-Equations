@@ -23,7 +23,7 @@ class Chaos {
     apply() {
         this.cassettePlayer.smoothRollingDelta();
 
-        const params = this.cassettePlayer.currentCassette.parameters;
+        const params = this.cassettePlayer.currentCassette.parameters.values;
         const positions = this.rendering.points.geometry.attributes.position.array;
         let index = 0;
         for (let i = 0; i < this.rendering.trail; i++) {
