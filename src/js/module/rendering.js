@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import {GPUComputationRenderer} from 'gpucomputationrender-three';
 
 import Time from './time';
-import ParameterEncoding from './parameterEncoding';
-import Parameters from './parameters';
+import Parameters from './parameterEncoding';
+import Chaos from './chaos';
 import pointsVert from '../../shaders/points.vert';
 import pointsFrag from '../../shaders/points.frag';
 import Controls from './controls';
@@ -31,9 +31,9 @@ class Rendering {
         this.setupEnvironment();
 
         this.timeManager = new Time();
-        this.encodedParameters = new ParameterEncoding();
+        this.encodedParameters = new Parameters();
         this.controls = new Controls(this.encodedParameters, this.timeManager);
-        this.parameters = new Parameters(this);
+        this.chaos = new Chaos(this);
 
         const vertices = new Float32Array(steps * trail * 3);
         const geometry = new THREE.BufferGeometry();

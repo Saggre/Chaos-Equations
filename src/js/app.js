@@ -12,7 +12,7 @@ stats.showPanel(0);
  */
 function animate() {
     stats.begin();
-    rendering.parameters.updateVertexPositions();
+    rendering.chaos.apply();
     rendering.renderer.render(rendering.scene, rendering.camera);
     stats.end();
     requestAnimationFrame(animate);
