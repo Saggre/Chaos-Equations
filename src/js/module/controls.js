@@ -1,13 +1,15 @@
 import dat from 'dat.gui';
 
 class Controls {
-    constructor(parameterEncoding) {
+    constructor(parameterEncoding, time) {
         this.gui = new dat.GUI();
         this.parameterEncoding = parameterEncoding;
 
         this.elements = {
             equationX: document.getElementsByClassName('chaos-equation--x')[0],
-            equationY: document.getElementsByClassName('chaos-equation--y')[0]
+            equationY: document.getElementsByClassName('chaos-equation--y')[0],
+            time: document.getElementsByClassName('chaos-time')[0]
+
         };
 
         const options = {
@@ -25,17 +27,16 @@ class Controls {
 
         parameterEncoding.onValueChanged(() => {
             options.parameters = parameterEncoding.toString();
-            // this.updateTexts();
             parameters.updateDisplay();
+
+            const equations = this.parameterEncoding.toEquations();
+            this.elements.equationX.textContent = 'x\' = ' + equations.x;
+            this.elements.equationY.textContent = 'y\' = ' + equations.y;
         });
 
-        // this.updateTexts();
-    }
-
-    updateTexts() {
-        const equations = this.parameterEncoding.toEquations();
-        this.elements.equationX.textContent = 'x\' = ' + equations.x;
-        this.elements.equationY.textContent = 'y\' = ' + equations.y;
+        time.onTimeChanged(() => {
+            this.elements.time.textContent = 't = ' + time.time;
+        });
     }
 }
 

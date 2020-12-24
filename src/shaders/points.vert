@@ -1,9 +1,13 @@
 varying vec3 vColor;
 
+uniform sampler2D colorTexture;
+uniform float pixelRatio;
+
 void main() {
-    gl_PointSize = 2.0;
-    vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
+    gl_PointSize = 2.1 * pixelRatio;
+    vec4 modelViewPosition = modelViewMatrix * vec4(position.xy, 0.0, 1.0);
     gl_Position = projectionMatrix * modelViewPosition;
 
-    vColor = vec3(1.0, 1.0, 1.0);
+    float pointIndex = position.z;
+    vColor = texture2D(colorTexture, vec2(pointIndex / 512.0, 0)).rgb;
 }

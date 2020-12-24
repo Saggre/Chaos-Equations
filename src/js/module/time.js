@@ -3,7 +3,7 @@ const deltaMinimum = 1e-7;
 const deltaPerStep = 1e-5;
 const timeStart = -3.0;
 const timeEnd = 3.0;
-const speedMultiplier = 1.0;
+const speedMultiplier = 2.0;
 
 class Time {
     constructor() {
@@ -11,6 +11,7 @@ class Time {
         this.delta = deltaPerStep * speedMultiplier;
         this.listeners = {
             timeEnded: [],
+            timeChanged: [],
             restarted: []
         };
         this.restart();
@@ -52,6 +53,14 @@ class Time {
     }
 
     /**
+     * Add a time changed listener
+     * @param callback
+     */
+    onTimeChanged(callback) {
+        this.listeners.timeChanged.push(callback);
+    }
+
+    /**
      * Smooth out the stepping speed
      */
     smoothRollingDelta() {
@@ -71,6 +80,9 @@ class Time {
      */
     advance(delta = this.rollingDelta) {
         this.time += delta;
+        this.listeners.timeChanged.forEach((callback) => {
+            callback(this);
+        });
     }
 }
 

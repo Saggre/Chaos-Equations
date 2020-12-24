@@ -11,25 +11,7 @@ class Parameters {
      */
     isPointInViewport(point) {
         const {camera} = this.rendering;
-        return point.x > -100 && point.x < 100 && point.y > 100 && point.y < 100;
-    }
-
-    getBounds() {
-        const bounds = {
-            left: this.historyPoints[0].x,
-            right: this.historyPoints[0].x,
-            bottom: this.historyPoints[0].y,
-            top: this.historyPoints[0].y
-        };
-
-        for (let i = 1; i < this.rendering.steps; i++) {
-            bounds.left = Math.min(bounds.left, this.historyPoints[i].x);
-            bounds.right = Math.max(bounds.right, this.historyPoints[i].x);
-            bounds.bottom = Math.min(bounds.bottom, this.historyPoints[i].y);
-            bounds.top = Math.max(bounds.top, this.historyPoints[i].y);
-        }
-
-        return bounds;
+        return point.x > camera.left && point.x < camera.right && point.y > camera.bottom && point.y < camera.top;
     }
 
     /**
@@ -69,7 +51,7 @@ class Parameters {
                     y: xx * params[9] + yy * params[10] + tt * params[11] + xy * params[12] + xt * params[13] + yt * params[14] + point.x * params[15] + point.y * params[16] + t * params[17]
                 };
 
-                const lim = 100.0;
+                const lim = 1.0;
 
                 point.y = Math.min(point.y, lim);
                 point.y = Math.max(point.y, -lim);
@@ -90,7 +72,7 @@ class Parameters {
 
                 positions[index++] = point.x;
                 positions[index++] = point.y;
-                positions[index++] = 0;
+                positions[index++] = j; // Color dimension
             }
 
             // Update the t variable

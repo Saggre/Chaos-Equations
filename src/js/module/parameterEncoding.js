@@ -1,5 +1,6 @@
 import Chance from 'chance';
 import {sv2bts, bts2sv} from 'base27';
+import ParameterLibrary from './library';
 
 const parameterCount = 18;
 
@@ -14,6 +15,7 @@ class ParameterEncoding {
             throw new Error('Parameter count must be a multiple of three');
         }
 
+        ParameterLibrary.shuffle();
         this.listeners = {
             valueChanged: []
         };
@@ -21,7 +23,7 @@ class ParameterEncoding {
         try {
             this.setValues(ParameterEncoding.getUrlParameters());
         } catch (e) {
-            this.setValues(ParameterEncoding.getRandomParameters());
+            this.setValues(ParameterEncoding.getNextBestParameters());
         }
     }
 
@@ -147,6 +149,22 @@ class ParameterEncoding {
         }
 
         return parameters;
+    }
+
+    /**
+     * Get good, saved parameters or random ones if all have been cycled through
+     * @returns {[]}
+     */
+    static getNextBestParameters() {
+        for (let i = 0; i < ParameterLibrary.bestParameters.length; i++) {
+            const parameters = ParameterLibrary.bestParameters[i];
+            if (!('used' in parameters) || parameters.used === false) {
+                ParameterLibrary.bestParameters[i].used = true;
+                return ParameterEncoding.getParametersFromString(parameters.code);
+            }
+        }
+
+        return ParameterEncoding.getRandomParameters();
     }
 
     /**

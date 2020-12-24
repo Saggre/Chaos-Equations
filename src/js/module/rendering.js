@@ -30,15 +30,14 @@ class Rendering {
 
         this.setupEnvironment();
 
+        this.timeManager = new Time();
         this.encodedParameters = new ParameterEncoding();
-        this.controls = new Controls(this.encodedParameters);
+        this.controls = new Controls(this.encodedParameters, this.timeManager);
         this.parameters = new Parameters(this);
 
         const vertices = new Float32Array(steps * trail * 3);
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-
-        this.timeManager = new Time();
 
         this.encodedParameters.onValueChanged(() => {
             this.timeManager.restart();
@@ -49,7 +48,14 @@ class Rendering {
         });
 
         const shaderMaterial = new THREE.ShaderMaterial({
-            uniforms: {},
+            uniforms: {
+                colorTexture: {
+                    value: Rendering.getColorTexture()
+                },
+                pixelRatio: {
+                    value: window.devicePixelRatio
+                }
+            },
             vertexShader: pointsVert,
             fragmentShader: pointsFrag
         });
@@ -74,13 +80,16 @@ class Rendering {
             0.5 * this.screenWorldUnits.x,
             0.5 * this.screenWorldUnits.y,
             -0.5 * this.screenWorldUnits.y,
-            0, 1
+            0, this.steps + 1.0
         );
 
         const geometry = new THREE.PlaneBufferGeometry(2, 2);
         const material = new THREE.MeshBasicMaterial({color: 0x000000, side: THREE.DoubleSide});
         const plane = new THREE.Mesh(geometry, material);
         this.scene.add(plane);
+
+        // const axesHelper = new THREE.AxesHelper(0.1);
+        // this.scene.add(axesHelper);
     }
 
     /**
@@ -104,10 +113,10 @@ class Rendering {
      * @param {number} size Width and length of the texture
      * @returns {DataTexture}
      */
-    static getColorTexture(size = 32) {
-        const data = new Uint8Array(size * size * 3); // 32 x 32
+    static getColorTexture(size = 512) {
+        const data = new Uint8Array(size * 3); // 32 x 32
 
-        for (let i = 0; i < size * size; i++) {
+        for (let i = 0; i < size; i++) {
             const stride = i * 3;
             const color = Rendering.getRandomColor(i);
             data[stride] = color.r * 255;
@@ -115,7 +124,7 @@ class Rendering {
             data[stride + 2] = color.b * 255;
         }
 
-        const texture = new THREE.DataTexture(data, size, size, THREE.RGBFormat);
+        const texture = new THREE.DataTexture(data, size, 1, THREE.RGBFormat);
         texture.needsUpdate = true;
 
         return texture;
