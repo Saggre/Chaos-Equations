@@ -14,6 +14,15 @@ class Parameters {
     }
 
     /**
+     * Equals test
+     * @param parameters
+     * @returns {boolean}
+     */
+    equals(parameters) {
+        return this.toString() === parameters.toString();
+    }
+
+    /**
      * Get parameter values as a base27 string
      * @returns {string}
      */

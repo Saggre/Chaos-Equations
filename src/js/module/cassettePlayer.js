@@ -14,7 +14,6 @@ class CassettePlayer {
         };
 
         this.rollingDelta = this.deltaPerStep;
-        this.delta = this.deltaPerStep * this.speedMultiplier;
 
         CassetteLibrary.shuffle();
 
@@ -44,6 +43,8 @@ class CassettePlayer {
 
     restart() {
         this.time = this.currentCassette.start;
+        this.speedMultiplier = this.currentCassette.speed;
+        this.delta = this.deltaPerStep * this.speedMultiplier;
     }
 
     /**
@@ -97,6 +98,12 @@ class CassettePlayer {
 
     setCassette(cassette) {
         this.currentCassette = cassette;
+
+        // Check if cassette exists in library
+        CassetteLibrary.findCassette(cassette.parameters, (newCassette) => {
+            this.currentCassette = newCassette;
+        });
+
         this.restart();
         window.location.hash = cassette.parameters.toString();
         this.listeners.cassetteChanged.forEach((callback) => {

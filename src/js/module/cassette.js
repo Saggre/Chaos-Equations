@@ -6,8 +6,9 @@ class Cassette {
      * @param parameters
      * @param start Start time
      * @param end End time
+     * @param speed
      */
-    constructor(parameters, start = Cassette.defaultTimeWindow[0], end = Cassette.defaultTimeWindow[1]) {
+    constructor(parameters, start = Cassette.defaultTimeWindow[0], end = Cassette.defaultTimeWindow[1], speed = 2) {
         if (end < start) {
             throw new Error('Ending must be after the beginning');
         }
@@ -15,6 +16,7 @@ class Cassette {
         this.parameters = parameters;
         this.start = start;
         this.end = end;
+        this.speed = speed;
         this.used = false;
     }
 }
